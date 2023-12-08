@@ -1,0 +1,3 @@
+[submodule "data/multi_tangent_data"]
+	path = data/multi_tangent_data
+	url = git@github.com:yijiangh/multi_tangent_data.git

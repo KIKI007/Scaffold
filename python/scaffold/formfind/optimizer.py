@@ -75,7 +75,8 @@ class SMILP_optimizer:
         for element in json_data["elements"]:
             self.line_edges_coord.append(element["end_node_inds"])
 
-        self.stick_model = StickModel(self.line_vertices_coord, self.line_edges_coord, self.bar_radius)
+        self.stick_model = StickModel()
+        self.stick_model.load_geometry(self.line_vertices_coord, self.line_edges_coord, self.bar_radius)
 
     def parse_optimization_data_from_json(self, json_data):
 
@@ -193,6 +194,9 @@ class SMILP_optimizer:
                     opt_data["edges_coord"] = json_data.get("opt_edges_coord", self.collect_layer_edge_coords(self.layer_start))
 
                     self.models.append(compute_scaffold_model(self.center_before_update, opt_data, self.opt_parameters, False))
+                    model = ScaffoldModel()
+                    model.fromJSON(self.models[-1].toJSON())
+                    self.models.append(model)
 
                     self.prev_opt_data = opt_data.copy()
             else:

@@ -34,7 +34,8 @@ class ScaffoldModelImporter:
 
     @property
     def model(self):
-        model = ScaffoldModel(self.lines, self.adj, self.cpts, self.radius)
+        model = ScaffoldModel()
+        model.load_geometry(self.lines, self.adj, self.cpts, self.radius)
         return model
 
     def read(self, filename):

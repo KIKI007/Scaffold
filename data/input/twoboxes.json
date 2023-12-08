@@ -10,7 +10,7 @@
   "collision_inds": [], 
   "shape_deviation": 0.20000000000000001, 
   "bar_collision_distance": 0.020000000000000007,
-  "layer_range": [-1, -1],
+  "layer_range": [0, -1],
   "bar_available_lengths": [
    0.5,
    1.0,

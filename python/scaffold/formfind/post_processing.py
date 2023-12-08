@@ -56,7 +56,8 @@ def compute_scaffold_model(ct, opt_data, opt_parameters, save=False, format=None
         p1 = resultCouplerV[id * 2 + 1]
         contact_points.append([p0, p1])
 
-    model = ScaffoldModel(line, adj, contact_points, opt_data["bar_radius"])
+    model = ScaffoldModel()
+    model.load_geometry(line, adj, contact_points, opt_data["bar_radius"])
     model.load_default_coupler()
     return model
 

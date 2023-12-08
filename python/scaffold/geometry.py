@@ -4,31 +4,64 @@ from scaffold import COUPLER_OBJ_PATH, COUPLER_COARSE_OBJ_PATH, COUPLER_COLLI_OB
 import xml.etree.cElementTree as ET
 
 class StickModel:
-    def __init__(self, lineV, lineE, radius):
+
+    def load_geometry(self, lineV, lineE, radius):
         self.lineV = np.copy(lineV)
         self.lineE = np.copy(lineE)
         self.radius = radius
+
+    def __init__(self):
         self.name = "stick"
+
+    def toJSON(self):
+        data = {
+            "vertices": self.lineV.tolist(),
+            "edges": self.lineE.tolist(),
+            "radius": self.radius
+        }
+        return data
+
+    def fromJSON(self, json_data):
+        self.lineV = np.array(json_data["vertices"])
+        self.lineE = np.array(json_data["edges"])
+        self.radius = json_data["radius"]
 
 class ScaffoldModel:
 
-    def __init__(self, lines, adjacency, contact_points, radius):
-
-        self.name = "scaffold"
-
+    def load_geometry(self, lines, adjacency, contact_points, radius):
         # data
         self.lines = np.copy(lines)
         self.adj = np.copy(adjacency)
         self.coupler_signs = None
         self.coupler_contact_pts = np.copy(contact_points)
         self.radius = radius
+        self.compute_center()
+
+    def __init__(self, ):
+        self.name = "scaffold"
 
         # geometry asset
         self.coupler_geometry = None
         self.coupler_colliders = []
         self.coupler_collider_names = []
 
+    def toJSON(self):
+        data = {
+            "line": self.lines.tolist(),
+            "adj": self.adj.tolist(),
+            "coupler_contact_pts": self.coupler_contact_pts.tolist(),
+            "radius": self.radius
+        }
+        return data
+
+    def fromJSON(self, json_data):
+        self.lines = np.array(json_data["line"])
+        self.adj = np.array(json_data["adj"])
+        self.coupler_contact_pts = np.array(json_data["coupler_contact_pts"])
+        self.radius = json_data["radius"]
+        self.coupler_signs = None
         self.compute_center()
+        self.load_default_coupler()
 
     def compute_center(self):
         self.center = np.array([0, 0, 0], dtype=float)
