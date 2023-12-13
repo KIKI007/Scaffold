@@ -1,0 +1,137 @@
+{
+"line_pt_pairs": [
+[
+[
+1.0,
+0.0,
+0.0
+],
+[
+1.0,
+1.0,
+0.0
+]
+],
+[
+[
+1.0283183261893887,
+0.9507522786792411,
+0.03718206842739853
+],
+[
+0.02944111888661538,
+0.9393354771958148,
+-0.008795984759963661
+]
+]
+],
+"contact_pairs_coord": [
+[
+[
+2,
+0
+],
+[
+0,
+1
+]
+]
+],
+"coupler_pt_pairs": [
+[
+[
+1.0,
+0.9504097746347383,
+0.0
+],
+[
+0.9983520099703055,
+0.9504097746347383,
+0.03580272683177766
+]
+]
+],
+"nstatus": 0,
+"opt_line_pos": [
+[
+0.25,
+-0.75,
+0.0
+],
+[
+0.21249999944120646,
+0.19999999925494194,
+0.034152468286553765
+]
+],
+"opt_line_orient": [
+[
+0.0,
+1.0,
+0.0
+],
+[
+-0.9988772073027734,
+-0.01141680148342632,
+-0.04597805318736219
+]
+],
+"opt_edges_coord": [
+[
+2,
+0
+],
+[
+0,
+1
+]
+],
+"opt_parameters": {
+"clamp_t_bnd": 0.10000000149011612,
+"pos_devi": 0.05000000074505806,
+"orient_devi": 0.05745329335331917,
+"time_out": 300,
+"bar_collision_distance": 0.019999999552965164,
+"clamp_collision_dist": 0.024000000208616257,
+"contactopt_trust_region_start": 0.10000000149011612,
+"layers": [
+[
+0,
+1
+]
+],
+"fixed_element_ids": [
+1
+],
+"bar_available_lengths": [
+1.0,
+2.0
+],
+"num_unsuccessful_step_to_expand_trust_region": 10,
+"opt_tol": 0.001,
+"max_tangent": -1,
+"trust_region_lobnd": 0.01,
+"trust_region_upbnd": 1.0,
+"contact_ignore_para_tol": 0.001,
+"line_para_tol": 0.01,
+"bigM": 1,
+"pos_tol": 1e-06,
+"duplicate_vertices_tol": 0.001,
+"bar_contact_distance_tol": 0,
+"bar_contact_distance": 0.018000000000000002,
+"fixed_contact_pairs_coord": [
+[
+[
+2,
+0
+],
+[
+0,
+1
+]
+]
+],
+"clamp_extension_length": 0.03,
+"debug_mode": 0
+}
+}

@@ -10,14 +10,17 @@ class StickModel:
         self.lineE = np.copy(lineE)
         self.radius = radius
 
+
     def __init__(self):
         self.name = "stick"
+        self.file_name = ""
 
     def toJSON(self):
         data = {
             "vertices": self.lineV.tolist(),
             "edges": self.lineE.tolist(),
-            "radius": self.radius
+            "radius": self.radius,
+            "file_name": self.file_name
         }
         return data
 
@@ -25,6 +28,19 @@ class StickModel:
         self.lineV = np.array(json_data["vertices"])
         self.lineE = np.array(json_data["edges"])
         self.radius = json_data["radius"]
+        self.file_name = json_data["file_name"]
+
+    def NodetoJSON(self):
+        result = []
+        for v in self.lineV:
+            result.append({"point": [v[0], v[1], v[2]]})
+        return result
+
+    def EdgeToJSON(self):
+        result = []
+        for e in self.lineE:
+            result.append({"end_node_inds": [e[0], e[1]]})
+        return result
 
 class ScaffoldModel:
 
@@ -55,6 +71,7 @@ class ScaffoldModel:
         return data
 
     def fromJSON(self, json_data):
+        self.name = "scaffold"
         self.lines = np.array(json_data["line"])
         self.adj = np.array(json_data["adj"])
         self.coupler_contact_pts = np.array(json_data["coupler_contact_pts"])

@@ -115,7 +115,7 @@ def compute_closest_t_between_lines(line_point_1_1, line_point_1_2, line_point_2
     return min_t
 
 # V, E, FE all coordinates
-def remove_vertex_duplication(V, E, FE, parameters):
+def remove_vertex_duplication(V, E, FE, Layers, parameters):
     newV = []
     map = {}
     for id in range(len(V)):
@@ -137,12 +137,21 @@ def remove_vertex_duplication(V, E, FE, parameters):
     newFE = []
     for e in E:
         if map[e[0]] != map[e[1]]:
-            new_e = (map[e[0]], map[e[1]])
+            new_e = [map[e[0]], map[e[1]]]
             newE.append(new_e)
             if e in FE:
                 newFE.append(new_e)
 
-    return [newV, newE, newFE]
+    newLayers = []
+    for layer in Layers:
+        new_layer = []
+        for e in layer:
+            if map[e[0]] != map[e[1]]:
+                new_e = [map[e[0]], map[e[1]]]
+                new_layer.append(new_e)
+        newLayers.append(new_layer)
+
+    return [newV, newE, newFE, newLayers]
 
 def dist_between_two_bars(nA, nB, xA, xB):
     """

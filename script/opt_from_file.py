@@ -1,14 +1,14 @@
-from scaffold.io import StickModelImporter, ScaffoldModelImporter
-from scaffold.gui import ScaffoldViewer, ScaffoldOptimizerViewer
-from scaffold.collision import CollisionChecker
-import time
-from scaffold.formfind.optimizer import SMILP_optimizer
+from scaffold.process_managers import *
+import multiprocessing as mp
+from multiprocessing import Process, Queue
 
 if __name__ == "__main__":
+    p2 = Process(target=computation_process)
+    p1 = Process(target=gui_process)
 
-    viewer = ScaffoldOptimizerViewer("twoboxes")
-    viewer.load_from_file()
+    p2.start()
+    p1.start()
 
-    viewer.register_model(viewer.stick_model)
+    p1.join()
+    p2.join()
 
-    viewer.show()

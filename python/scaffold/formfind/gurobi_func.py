@@ -93,7 +93,6 @@ def create_bar_connectivity_constraints(m, V, E, Edge_at_Joint, contact_pairs, p
         joint_id = contact_pairs[cit]["joint_id"]
         contact_var = contact_pairs[cit]["contact_var"]
 
-
         if np.linalg.norm(V[joint_id] - V[E[edgeI][0]]) < np.linalg.norm(V[joint_id] - V[E[edgeI][1]]):
             bar_contact_vars[edgeI][0] += contact_var
             num_contact_vars[edgeI][0] += 1
