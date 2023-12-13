@@ -134,7 +134,7 @@ class SMILP_optimizer:
         self.debug_mode = self.opt_parameters.get('debug_mode', 0)
 
         # available bar lengths (list discrete numbers)
-        self.beam_available_lengths = self.opt_parameters.get("bar_available_lengths", [1.0, 2.0])
+        self.beam_available_lengths = self.opt_parameters.get("bar_available_lengths", [0.2, 0.5, 1.0, 2.0])
         self.beam_available_lengths.sort()
         self.opt_parameters["bar_available_lengths"] = self.beam_available_lengths
 
