@@ -322,7 +322,7 @@ class SMILP_optimizer:
             if opt_data["nstatus"] != 0:
                 cprint('No solution found!', 'red')
                 self.send_message_scaffoldmodel("fail")
-                p False
+                return False
 
             curr_fixed_edges_coord = curr_edges_coord.copy()
 
