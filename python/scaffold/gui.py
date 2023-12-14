@@ -2,7 +2,7 @@ import numpy as np
 import polyscope as ps
 from scaffold import DATA_DIR
 import polyscope.imgui as psim
-from scaffold.geometry import StickModel
+from scaffold.io import StickModelInput
 from scaffold.formfind.optimizer import SMILP_optimizer
 from compas_eve import Message
 from compas_eve import Subscriber
@@ -25,15 +25,22 @@ class ScaffoldViewer:
         if hasattr(model, 'name'):
             self.model = model
             if model.name == "stick":
-                self.register_lines_for_stickmodel(model.lineV, model.lineE, model.radius)
+                self.register_lines_for_stickmodel(model)
             elif model.name == "scaffold":
                 self.register_lines(model.lines, model.radius)
                 if model.coupler_geometry != None and self.show_clamps:
                     self.register_couplers(model)
 
-    def register_lines_for_stickmodel(self, nodes, edges, radius):
-        curves = ps.register_curve_network(name = "stick_frame", nodes = nodes, edges = edges, color=(0.8, 0.5, 0), transparency=0.2)
-        curves.set_radius(radius, relative=False)
+    def register_lines_for_stickmodel(self, model):
+        # lines
+        curves = ps.register_curve_network(name = "stick_frame", nodes = model.lineV, edges = model.lineE, color=(0.8, 0.5, 0), transparency=0.2)
+        curves.set_radius(model.radius, relative=False)
+
+        # normal lines
+        if model.has_normals():
+            V, E = model.computeNormalLines()
+            curves = ps.register_curve_network(name="normal", nodes=V, edges=E, color=(0.5, 0.8, 0.6),
+                                           transparency=0.2)
 
     def register_lines(self, lines, radius):
         nodes = []
@@ -77,73 +84,47 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
         self.model_select_table = ["None"]
         self.user_select_model_id = self.model_select_table[0]
         self.model_name_map = {}
-        self.opt_parameters = {}
-        self.update_parameters()
+
+        self.input = StickModelInput()
         self.models = []
 
         # data
-        self.stick_model = None
         self.total_changed = False
         self.refresh = False
         self.running = False
         self.running_msg = ""
 
-    def update_parameters(self):
-        self.opt_parameters["clamp_t_bnd"] = self.opt_parameters.get("clamp_t_bnd", 0.1)
-        self.opt_parameters["pos_devi"] = self.opt_parameters.get("pos_devi", 0.05)
-        self.opt_parameters["orient_devi"] = self.opt_parameters.get("orient_devi", 0.0574532925)
-        self.opt_parameters["time_out"] = self.opt_parameters.get("time_out", 300)
-        self.opt_parameters["bar_collision_distance"] = self.opt_parameters.get("bar_collision_distance", 0.02)
-        self.opt_parameters["clamp_collision_dist"] = self.opt_parameters.get("clamp_collision_dist", 0.024)
-        self.opt_parameters["contactopt_trust_region_start"] = self.opt_parameters.get("contactopt_trust_region_start", 0.1)
-        self.opt_parameters["bar_available_lengths"] = self.opt_parameters.get("bar_available_lengths", [1.0, 2.0])
-        print(self.opt_parameters["bar_available_lengths"])
+    def load_from_file_legacy(self, name):
+        self.input = StickModelInput()
+        self.input.load_from_file_legacy(name)
+        self.input.update_parameters()
+        self.register_model(self.input.stick_model)
 
     def load_from_file(self, name):
-        file_path = os.path.join(DATA_DIR, name)
-        self.stick_model = StickModel()
-        with open(file_path) as file:
-            json_data = json.load(file)
-            for point in json_data["nodes"]:
-                point_coord = point["point"]
-                self.stick_model.lineV.append(point_coord)
-            self.stick_model.lineV = np.array(self.stick_model.lineV)
-
-            for element in json_data["elements"]:
-                self.stick_model.lineE.append(element["end_node_inds"])
-            self.stick_model.lineE = np.array(self.stick_model.lineE)
-
-            self.stick_model.file_name = name
-            self.stick_model.radius = json_data.get('bar_radius', 0.01)
-            self.opt_parameters = json_data.get('mt_config', {})
-            self.register_model(self.stick_model)
-
-            self.update_parameters()
-
+        self.input = StickModelInput()
+        self.input.loadFile(name)
+        self.input.update_parameters()
+        self.register_model(self.input.stick_model)
 
     def send_optimization_command(self):
-        if self.stick_model != None:
+        if self.input.stick_model.is_valid():
             topic = Topic("/opt/problem_request/", Message)
             tx = MqttTransport(host="localhost")
             publisher = Publisher(topic, transport=tx)
-            data = {}
-            data["name"] = self.stick_model.file_name
-            data["nodes"] = self.stick_model.NodetoJSON()
-            data["elements"] = self.stick_model.EdgeToJSON()
-            data["bar_radius"] = self.stick_model.radius
-            data["mt_config"] = self.opt_parameters
-            data["cross_secs"] = [{"radius": self.stick_model.radius}]
-            msg = Message(data)
+            msg = Message(self.input.toJSON())
+            self.input.saveFile()
             publisher.publish(msg)
             self.running = True
+            self.refresh = False
+            self.running_msg = ""
             time.sleep(1)
 
     def set_customized_interface(self):
         psim.PushItemWidth(150)
 
         # title
-        if self.stick_model != None:
-            psim.TextUnformatted("Model:\t {} {}".format(self.stick_model.file_name, self.running_msg))
+        if self.input.stick_model.is_valid():
+            psim.TextUnformatted("Model:\t {} {}".format(self.input.stick_model.file_name, self.running_msg))
 
         # model for rendering
         psim.SetNextItemOpen(True, psim.ImGuiCond_FirstUseEver)
@@ -182,14 +163,14 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
             if psim.TreeNode("Parameters (Important)"):
                 for item in self.interface_important:
                     if item["type"] == "float_input":
-                        changed, self.opt_parameters[item["name"]] = psim.InputFloat(item["label"],
-                                                                                     self.opt_parameters[item["name"]])
+                        changed, self.input.opt_parameters[item["name"]] = psim.InputFloat(item["label"],
+                                                                                     self.input.opt_parameters[item["name"]])
                     elif item["type"] == "float_int":
-                        changed, self.opt_parameters[item["name"]] = psim.InputInt(item["label"],
-                                                                                   self.opt_parameters[item["name"]])
+                        changed, self.input.opt_parameters[item["name"]] = psim.InputInt(item["label"],
+                                                                                   self.input.opt_parameters[item["name"]])
 
                 if psim.TreeNode("Available Beam Lengths"):
-                    lengths = self.opt_parameters["bar_available_lengths"]
+                    lengths = self.input.opt_parameters["bar_available_lengths"]
                     for id in range(len(lengths)):
                         changed, lengths[id] = psim.InputFloat("length {}".format(id), lengths[id])
                     if psim.Button("+"):
@@ -206,11 +187,11 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
 
                 for item in self.interface_system:
                     if item["type"] == "float_input":
-                        changed, self.opt_parameters[item["name"]] = psim.InputFloat(item["label"],
-                                                                                     self.opt_parameters[item["name"]])
+                        changed, self.input.opt_parameters[item["name"]] = psim.InputFloat(item["label"],
+                                                                                     self.input.opt_parameters[item["name"]])
                     elif item["type"] == "float_int":
-                        changed, self.opt_parameters[item["name"]] = psim.InputInt(item["label"],
-                                                                                   self.opt_parameters[item["name"]])
+                        changed, self.input.opt_parameters[item["name"]] = psim.InputInt(item["label"],
+                                                                                   self.input.opt_parameters[item["name"]])
             psim.TreePop()
 
         # update tables
@@ -226,7 +207,7 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
 
         if self.total_changed:
             ps.remove_all_structures()
-            self.register_model(self.stick_model)
+            self.register_model(self.input.stick_model)
             if self.user_select_model_id != "None" and self.user_select_model_id in self.model_name_map:
                 self.register_model(self.model_name_map[self.user_select_model_id])
 

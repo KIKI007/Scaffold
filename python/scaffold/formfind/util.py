@@ -114,6 +114,26 @@ def compute_closest_t_between_lines(line_point_1_1, line_point_1_2, line_point_2
 
     return min_t
 
+def compute_reciprocal_contact_pairs(V, E):
+    for vid in range(len(V)):
+        v_vertices = []
+        for e in E:
+            if vid in e:
+                if e[0] == vid:
+                    v_vertices.append(e[1])
+                else:
+                    v_vertices.append(e[0])
+
+        drts = []
+        for vend in v_vertices:
+            drts.append(vend - V[vid])
+
+        print(V[vid])
+
+
+
+
+
 # V, E, FE all coordinates
 def remove_vertex_duplication(V, E, FE, Layers, parameters):
     newV = []
