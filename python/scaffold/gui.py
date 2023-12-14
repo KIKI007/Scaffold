@@ -1,5 +1,6 @@
 import numpy as np
 import polyscope as ps
+from scaffold import DATA_DIR
 import polyscope.imgui as psim
 from scaffold.geometry import StickModel
 from scaffold.formfind.optimizer import SMILP_optimizer
@@ -9,6 +10,8 @@ from compas_eve import Publisher
 from compas_eve import Topic
 from compas_eve.mqtt import MqttTransport
 import time
+import json
+import os
 
 class ScaffoldViewer:
     def __init__(self):
@@ -74,6 +77,7 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
         self.model_select_table = ["None"]
         self.user_select_model_id = self.model_select_table[0]
         self.model_name_map = {}
+        self.opt_parameters = {}
         self.update_parameters()
         self.models = []
 
@@ -85,7 +89,6 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
         self.running_msg = ""
 
     def update_parameters(self):
-        self.opt_parameters = {}
         self.opt_parameters["clamp_t_bnd"] = self.opt_parameters.get("clamp_t_bnd", 0.1)
         self.opt_parameters["pos_devi"] = self.opt_parameters.get("pos_devi", 0.05)
         self.opt_parameters["orient_devi"] = self.opt_parameters.get("orient_devi", 0.0574532925)
@@ -93,6 +96,30 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
         self.opt_parameters["bar_collision_distance"] = self.opt_parameters.get("bar_collision_distance", 0.02)
         self.opt_parameters["clamp_collision_dist"] = self.opt_parameters.get("clamp_collision_dist", 0.024)
         self.opt_parameters["contactopt_trust_region_start"] = self.opt_parameters.get("contactopt_trust_region_start", 0.1)
+        self.opt_parameters["bar_available_lengths"] = self.opt_parameters.get("bar_available_lengths", [1.0, 2.0])
+        print(self.opt_parameters["bar_available_lengths"])
+
+    def load_from_file(self, name):
+        file_path = os.path.join(DATA_DIR, name)
+        self.stick_model = StickModel()
+        with open(file_path) as file:
+            json_data = json.load(file)
+            for point in json_data["nodes"]:
+                point_coord = point["point"]
+                self.stick_model.lineV.append(point_coord)
+            self.stick_model.lineV = np.array(self.stick_model.lineV)
+
+            for element in json_data["elements"]:
+                self.stick_model.lineE.append(element["end_node_inds"])
+            self.stick_model.lineE = np.array(self.stick_model.lineE)
+
+            self.stick_model.file_name = name
+            self.stick_model.radius = json_data.get('bar_radius', 0.01)
+            self.opt_parameters = json_data.get('mt_config', {})
+            self.register_model(self.stick_model)
+
+            self.update_parameters()
+
 
     def send_optimization_command(self):
         if self.stick_model != None:
@@ -139,6 +166,7 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
 
         # optimization button
         if self.running == False:
+
             if psim.Button("Optimize"):
                 self.send_optimization_command()
 
@@ -159,6 +187,19 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
                     elif item["type"] == "float_int":
                         changed, self.opt_parameters[item["name"]] = psim.InputInt(item["label"],
                                                                                    self.opt_parameters[item["name"]])
+
+                if psim.TreeNode("Available Beam Lengths"):
+                    lengths = self.opt_parameters["bar_available_lengths"]
+                    for id in range(len(lengths)):
+                        changed, lengths[id] = psim.InputFloat("length {}".format(id), lengths[id])
+                    if psim.Button("+"):
+                        lengths.append(1)
+                    psim.SameLine()
+                    if psim.Button("-") and len(lengths) > 0:
+                        lengths.pop()
+
+                psim.TreePop()
+
             psim.TreePop()
 
             if psim.TreeNode("Parameters (System)"):

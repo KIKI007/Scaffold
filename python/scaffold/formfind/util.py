@@ -117,8 +117,18 @@ def compute_closest_t_between_lines(line_point_1_1, line_point_1_2, line_point_2
 # V, E, FE all coordinates
 def remove_vertex_duplication(V, E, FE, Layers, parameters):
     newV = []
+    dangling_V = [True for v in V]
+
     map = {}
+
+    for e in E:
+        dangling_V[e[0]] = False
+        dangling_V[e[1]] = False
+
     for id in range(len(V)):
+        if dangling_V[id]:
+            continue
+
         v = V[id]
         duplicate = False
         for nid in range(len(newV)):

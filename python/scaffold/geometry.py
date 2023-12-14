@@ -14,6 +14,9 @@ class StickModel:
     def __init__(self):
         self.name = "stick"
         self.file_name = ""
+        self.lineV = []
+        self.lineE = []
+        self.radius = 0
 
     def toJSON(self):
         data = {

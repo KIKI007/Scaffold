@@ -37,14 +37,18 @@ def update_viewer_scaffold_models(msg):
         viewer.models.append(model)
 
 def update_optimization(msg):
+
     optimizer = SMILP_optimizer(msg["name"])
     print(msg)
     optimizer.parse_from_json(msg)
     optimizer.solve()
 
-def gui_process():
+def gui_process(queue):
     global viewer
+    filename = queue.get()
+
     viewer = ScaffoldOptimizerViewer()
+    viewer.load_from_file(filename)
     tx = MqttTransport("localhost")
 
     topic = Topic("/scaffold/stick_model/", Message)
@@ -58,6 +62,7 @@ def gui_process():
     viewer.show()
 
 def computation_process():
+
     tx = MqttTransport("localhost")
     topic = Topic("/opt/problem_request/", Message)
     subscriber_stick = Subscriber(topic, callback=update_optimization, transport=tx)

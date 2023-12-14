@@ -63,16 +63,6 @@ class SMILP_optimizer:
         self.check_geometry_match_barlengths()
         self.parse_prev_computed_result()
 
-    def load_from_file(self):
-        if "." not in self.file_name:
-            self.file_name += ".json"
-
-        input_file = os.path.join(DATA_DIR, self.file_name)
-
-        with open(input_file) as file:
-            json_data = json.load(file)
-            self.parse_from_json(json_data)
-
     def parse_stickmodel_geometry_from_json(self, json_data):
         scale = json_data.get("scale", 1.0)
         # bar radius, assuming same bar radius
