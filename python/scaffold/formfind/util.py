@@ -114,29 +114,10 @@ def compute_closest_t_between_lines(line_point_1_1, line_point_1_2, line_point_2
 
     return min_t
 
-def compute_reciprocal_contact_pairs(V, E):
-    for vid in range(len(V)):
-        v_vertices = []
-        for e in E:
-            if vid in e:
-                if e[0] == vid:
-                    v_vertices.append(e[1])
-                else:
-                    v_vertices.append(e[0])
-
-        drts = []
-        for vend in v_vertices:
-            drts.append(vend - V[vid])
-
-        print(V[vid])
-
-
-
-
-
 # V, E, FE all coordinates
-def remove_vertex_duplication(V, E, FE, Layers, parameters):
+def remove_vertex_duplication(V, E, FE, Layers, parameters, N = None):
     newV = []
+    newN = []
     dangling_V = [True for v in V]
 
     map = {}
@@ -162,6 +143,8 @@ def remove_vertex_duplication(V, E, FE, Layers, parameters):
         else:
             map[id] = len(newV)
             newV.append(v)
+            if N is not None:
+                newN.append(N[id])
 
     newE = []
     newFE = []
@@ -181,7 +164,62 @@ def remove_vertex_duplication(V, E, FE, Layers, parameters):
                 new_layer.append(new_e)
         newLayers.append(new_layer)
 
-    return [newV, newE, newFE, newLayers]
+    if N is not None:
+        return [newV, newE, newFE, newLayers, newN]
+    else:
+        return [newV, newE, newFE, newLayers]
+
+def compute_reciprocal_contact_pairs(V, E, N):
+    contact_pairs_coord = []
+    contact_pairs_normals = []
+    for vid in range(len(V)):
+
+        v_vertices = []
+        edges = []
+
+        for e in E:
+            if vid in e:
+                edges.append(e)
+                if e[0] == vid:
+                    v_vertices.append(V[e[1]])
+                else:
+                    v_vertices.append(V[e[0]])
+
+        drts = []
+        for vend in v_vertices:
+            drt = vend - V[vid]
+            drt = drt / np.linalg.norm(drt)
+            drts.append(drt)
+
+        xaxis = drts[0]
+        zaxis = N[vid]
+        yaxis = np.cross(zaxis, xaxis)
+
+        angles = []
+        for drt in drts:
+            xy = np.array([np.dot(drt, xaxis), np.dot(drt, yaxis)])
+            angle = np.angle(xy[0] + xy[1] * 1.0j)
+            if angle < 0:
+                angle += math.pi * 2
+            angles.append(angle)
+
+        angle_sorted = sorted(angles)
+        num = len(angles)
+
+        if num < 5:
+            continue
+
+        for id in range(num):
+            curr_angle = angle_sorted[id]
+            next_angle = angle_sorted[(id + 1) % num]
+            curr_index = angles.index(curr_angle)
+            next_index = angles.index(next_angle)
+            contact_pairs_coord.append([edges[curr_index], edges[next_index]])
+            contact_pairs_normals.append(zaxis.tolist())
+
+    return contact_pairs_coord, contact_pairs_normals
+
+
 
 def dist_between_two_bars(nA, nB, xA, xB):
     """

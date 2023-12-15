@@ -15,7 +15,7 @@ class StickModelInput:
             json_data = json.load(file)
             self.fromJSON(json_data)
 
-    def saveFile(self, file_name="reciprocal_dome.json"):
+    def saveFile(self, file_name="tmp.json"):
         file_path = os.path.join(DATA_DIR, file_name)
         print("Save file {} to the folder {}".format(file_name, DATA_DIR))
         with open(file_path, "w") as file:
