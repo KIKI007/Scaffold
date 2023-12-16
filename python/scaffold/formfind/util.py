@@ -223,8 +223,6 @@ def compute_reciprocal_contact_pairs(V, E, N):
 
     return contact_pairs_coord, contact_pairs_normals
 
-
-
 def dist_between_two_bars(nA, nB, xA, xB):
     """
     :param nA: the direction of bar A

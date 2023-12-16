@@ -51,7 +51,6 @@ class StickModel:
         self.radius = json_data["radius"]
         if "normals" in json_data:
             self.normals = np.array(json_data["normals"])
-
         self.file_name = json_data["file_name"]
 
     def computeNormalLines(self, length = 0.1):

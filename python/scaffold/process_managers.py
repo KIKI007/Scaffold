@@ -14,18 +14,14 @@ import time
 def update_viewer_stick_model(msg):
     global viewer
     if viewer.running == False:
-        model = StickModel()
-        model.fromJSON(msg)
-        viewer.stick_model = model
-        viewer.opt_parameters["layers"] = msg["layers_ind"]
-        viewer.opt_parameters["fixed_element_ids"] = msg["fixed_element_inds"]
+        modelinput = StickModelInput()
+        modelinput.fromJSON(msg)
+        viewer.input = modelinput
         viewer.total_changed = True
-    #viewer.register_model(model)
 
 def update_viewer_scaffold_models(msg):
     global viewer
     if viewer.running == True:
-
         output = ScaffoldModelOutput()
         output.fromJson(msg)
         viewer.running_msg = output.print_message
@@ -41,7 +37,7 @@ def update_viewer_scaffold_models(msg):
 def update_optimization(msg):
     input = StickModelInput()
     input.fromJSON(msg)
-    optimizer = SMILP_optimizer(input.stick_model.name)
+    optimizer = SMILP_optimizer(input.stick_model.file_name)
     optimizer.input_model(input)
     optimizer.solve()
 

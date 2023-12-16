@@ -31,6 +31,7 @@ class StickModelInput:
         self.stick_model = StickModel()
         self.stick_model.fromJSON(json_data["stick_model"])
         self.opt_parameters = json_data["mt_config"]
+        self.update_parameters()
         return
 
 

@@ -68,7 +68,8 @@ class SMILP_optimizer:
 
         # load geometry
         self.line_vertices_coord = input.stick_model.lineV.copy()
-        self.line_edges_coord = input.stick_model.lineE.copy()
+        self.line_edges_coord = input.stick_model.lineE.tolist().copy()
+
         if input.stick_model.has_normals():
             self.normals = input.stick_model.normals.copy()
 
@@ -81,6 +82,8 @@ class SMILP_optimizer:
         self.fixed_edges_ind = self.opt_parameters.get('fixed_element_ids', [])
         self.fixed_edges_coord = self.from_edge_ind_to_coord(self.fixed_edges_ind)
         del self.fixed_edges_ind
+
+        print( self.fixed_edges_coord )
 
         # layers' index
         self.layers_ind = self.opt_parameters.get('layers', [list(range(len(self.line_edges_coord)))])
