@@ -206,12 +206,16 @@ def compute_reciprocal_contact_pairs(V, E, N):
         angle_sorted = sorted(angles)
         num = len(angles)
 
-        if num < 5:
-            continue
-
         for id in range(num):
             curr_angle = angle_sorted[id]
             next_angle = angle_sorted[(id + 1) % num]
+
+            res_angle = next_angle - curr_angle
+            if res_angle < 0:
+                res_angle += math.pi * 2
+            if res_angle > math.pi:
+                continue
+
             curr_index = angles.index(curr_angle)
             next_index = angles.index(next_angle)
             contact_pairs_coord.append([edges[curr_index], edges[next_index]])

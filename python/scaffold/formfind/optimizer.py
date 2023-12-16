@@ -124,10 +124,9 @@ class SMILP_optimizer:
 
         self.opt_parameters.update({
             # * internal
-            "num_unsuccessful_step_to_expand_trust_region": 10,
-            "opt_tol": 1E-3,
+            "opt_tol": 1E-2,
             "max_tangent": -1,
-            "trust_region_lobnd": 1E-2,
+            "trust_region_lobnd": 1E-6,
             "trust_region_upbnd": 1.0,
             "contact_ignore_para_tol": 1E-3,
             "line_para_tol": 1E-2,
@@ -141,6 +140,7 @@ class SMILP_optimizer:
             "debug_mode": self.debug_mode
         })
 
+        self.opt_parameters["num_unsuccessful_step_to_expand_trust_region"] = self.opt_parameters.get("num_unsuccessful_step_to_expand_trust_region", 10)
         self.opt_parameters["clamp_t_bnd"] = self.opt_parameters.get("clamp_t_bnd", 0.1)
         self.opt_parameters["pos_devi"] = self.opt_parameters.get("pos_devi", 0.05)
         self.opt_parameters["orient_devi"] = self.opt_parameters.get("orient_devi", 0.0574532925)
@@ -336,7 +336,8 @@ class SMILP_optimizer:
 
             model = compute_scaffold_model(self.center_before_update,
                                            opt_data,
-                                           self.opt_parameters, True,
+                                           self.opt_parameters,
+                                           True,
                                            {"name": self.file_name, "complete": curr_layer_id + 1 == self.layer_end,
                                             "id": curr_layer_id})
 
@@ -391,6 +392,7 @@ class SMILP_optimizer:
                             "vertices_coord": self.line_vertices_coord.copy()}
 
                 model = compute_scaffold_model(self.center_before_update, opt_data, self.opt_parameters, False)
+
                 self.send_result("opt", "(it={}, tr_size={:.2e}, radius={:.2e})".format(num_it, tr_size, curr_radius),
                                  model)
 
