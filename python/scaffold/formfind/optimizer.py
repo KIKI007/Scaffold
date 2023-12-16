@@ -6,7 +6,7 @@ from termcolor import cprint
 from scaffold.formfind.util import *
 from scaffold.formfind.post_processing import *
 from scaffold.formfind.gurobi_func import *
-from scaffold.geometry import ScaffoldModel, StickModel
+from scaffold.io import ScaffoldModelOutput, StickModelInput
 
 from compas_eve import Message
 from compas_eve import Subscriber
@@ -16,6 +16,7 @@ from compas_eve.mqtt import MqttTransport
 import time
 import multiprocessing as mp
 from multiprocessing import Process
+
 
 class SMILP_optimizer:
 
@@ -44,7 +45,7 @@ class SMILP_optimizer:
                 edge_coords.add(tuple(le))
         return [[e[0], e[1]] for e in edge_coords]
 
-    def parse_from_json(self, json_data):
+    def input_model(self, input):
 
         if "." not in self.file_name:
             self.file_name += ".json"
@@ -55,45 +56,34 @@ class SMILP_optimizer:
         self.layer_start = -1
         self.layer_end = -1
 
-        self.parse_stickmodel_geometry_from_json(json_data)
-        self.parse_optimization_data_from_json(json_data)
+        self.parse_from_input(input)
         self.update_optimization_parameters()
         self.update_geometry()
 
         self.check_geometry_match_barlengths()
         self.parse_prev_computed_result()
 
-    def parse_stickmodel_geometry_from_json(self, json_data):
-        scale = json_data.get("scale", 1.0)
-        # bar radius, assuming same bar radius
-        print(json_data["bar_radius"])
-        self.bar_radius = json_data.get('bar_radius', json_data["cross_secs"][0]["radius"])
+    def parse_from_input(self, input):
+        self.bar_radius = input.stick_model.radius
 
-        # point coordinates
-        for point in json_data["nodes"]:
-            point_coord = np.array(point["point"]) * float(scale)
-            self.line_vertices_coord.append(point_coord)
-        self.line_vertices_coord = np.array(self.line_vertices_coord)
+        # load geometry
+        self.line_vertices_coord = input.stick_model.lineV.copy()
+        self.line_edges_coord = input.stick_model.lineE.tolist().copy()
 
-        # edge coordinates
-        for element in json_data["elements"]:
-            self.line_edges_coord.append(element["end_node_inds"])
+        if input.stick_model.has_normals():
+            self.normals = input.stick_model.normals.copy()
 
-        self.stick_model = StickModel()
-        self.stick_model.load_geometry(self.line_vertices_coord, self.line_edges_coord, self.bar_radius)
+        self.stick_model = input.stick_model
 
-    def parse_optimization_data_from_json(self, json_data):
         # parameters
-        self.opt_parameters = json_data['mt_config']
+        self.opt_parameters = input.opt_parameters.copy()
 
         # edges that are not optimized
-        if "fixed_element_ids" in json_data:
-            self.fixed_edges_ind = json_data.get('fixed_element_ids') # legacy
-        else:
-            self.fixed_edges_ind =  self.opt_parameters.get('fixed_element_ids', [])
-
+        self.fixed_edges_ind = self.opt_parameters.get('fixed_element_ids', [])
         self.fixed_edges_coord = self.from_edge_ind_to_coord(self.fixed_edges_ind)
         del self.fixed_edges_ind
+
+        print( self.fixed_edges_coord )
 
         # layers' index
         self.layers_ind = self.opt_parameters.get('layers', [list(range(len(self.line_edges_coord)))])
@@ -137,10 +127,9 @@ class SMILP_optimizer:
 
         self.opt_parameters.update({
             # * internal
-            "num_unsuccessful_step_to_expand_trust_region": 10,
-            "opt_tol": 1E-3,
+            "opt_tol": 1E-2,
             "max_tangent": -1,
-            "trust_region_lobnd": 1E-2,
+            "trust_region_lobnd": 1E-6,
             "trust_region_upbnd": 1.0,
             "contact_ignore_para_tol": 1E-3,
             "line_para_tol": 1E-2,
@@ -154,17 +143,20 @@ class SMILP_optimizer:
             "debug_mode": self.debug_mode
         })
 
+        self.opt_parameters["num_unsuccessful_step_to_expand_trust_region"] = self.opt_parameters.get("num_unsuccessful_step_to_expand_trust_region", 10)
         self.opt_parameters["clamp_t_bnd"] = self.opt_parameters.get("clamp_t_bnd", 0.1)
-        self.opt_parameters["pos_devi"]  = self.opt_parameters.get("pos_devi", 0.05)
-        self.opt_parameters["orient_devi"]  = self.opt_parameters.get("orient_devi", 0.0574532925)
+        self.opt_parameters["pos_devi"] = self.opt_parameters.get("pos_devi", 0.05)
+        self.opt_parameters["orient_devi"] = self.opt_parameters.get("orient_devi", 0.0574532925)
         self.opt_parameters["time_out"] = self.opt_parameters.get("time_out", 300)
         self.opt_parameters["bar_collision_distance"] = self.opt_parameters.get("bar_collision_distance", 0.02)
         self.opt_parameters["clamp_collision_dist"] = self.opt_parameters.get("clamp_collision_dist", 0.024)
-        self.opt_parameters["contactopt_trust_region_start"] = self.opt_parameters.get("contactopt_trust_region_start", 0.1)
+        self.opt_parameters["contactopt_trust_region_start"] = self.opt_parameters.get("contactopt_trust_region_start",
+                                                                                       0.1)
+        self.opt_parameters["reciprocal"] = self.opt_parameters.get("reciprocal", False)
 
         self.prev_opt_data = {"vs": [], "xs": [], "nstatus": -1, "contact_pairs_coord": []}
 
-    def send_message_process(self, queue):
+    def send_result_message(self, queue):
         data = queue.get()
         topic = Topic("/opt/scaffold_model/", Message)
         tx = MqttTransport(host="localhost")
@@ -173,14 +165,18 @@ class SMILP_optimizer:
         publisher.publish(msg)
         time.sleep(1)
 
-    def send_message_scaffoldmodel(self, msg = "running", model = None):
-        data = {}
-        if model != None:
-            data = model.toJSON()
-        data["msg"] = msg
+    def send_result(self, status="", print_message="", model=None):
+        output = ScaffoldModelOutput()
+        if model is not None:
+            output.scaffold_model = model
+        output.opt_parameters = self.opt_parameters
+        output.status = status
+        output.print_message = print_message
+
+        data = output.toJson()
 
         queue = mp.Queue()
-        p = Process(target=self.send_message_process, args=(queue, ))
+        p = Process(target=self.send_result_message, args=(queue,))
         p.start()
         queue.put(data)
         p.join()
@@ -190,9 +186,9 @@ class SMILP_optimizer:
         if self.layer_start >= 0:
             # read
             mt_file = os.path.join(MT_DIR,
-                                    self.file_name.split(".")[0]
-                                    + "_MT" + "_layer_"
-                                    + str(self.layer_start) + ".json")
+                                   self.file_name.split(".")[0]
+                                   + "_MT" + "_layer_"
+                                   + str(self.layer_start) + ".json")
 
             if os.path.isfile(mt_file):
                 with open(mt_file) as file:
@@ -212,22 +208,24 @@ class SMILP_optimizer:
                     elif "contact_id_pairs" in json_data:
                         # legacy code
                         contact_id_pairs = json_data["contact_id_pairs"]
-                        contact_pairs_coord = [(self.line_edges_coord[e0], self.line_edges_coord[e1]) for [e0, e1] in contact_id_pairs]
+                        contact_pairs_coord = [(self.line_edges_coord[e0], self.line_edges_coord[e1]) for [e0, e1] in
+                                               contact_id_pairs]
 
                     self.opt_parameters["fixed_contact_pairs_coord"] = contact_pairs_coord
 
-                    opt_data =       {"vs": vs,
-                                     "xs": xs,
-                                     "bar_radius": self.bar_radius,
-                                     "contact_pairs_coord": contact_pairs_coord,
-                                     "fixed_edges_coord": self.fixed_edges_coord,
-                                     "vertices_coord": self.line_vertices_coord.copy(),
-                                     "nstatus": 0}
+                    opt_data = {"vs": vs,
+                                "xs": xs,
+                                "bar_radius": self.bar_radius,
+                                "contact_pairs_coord": contact_pairs_coord,
+                                "fixed_edges_coord": self.fixed_edges_coord,
+                                "vertices_coord": self.line_vertices_coord.copy(),
+                                "nstatus": 0}
 
-                    opt_data["edges_coord"] = json_data.get("opt_edges_coord", self.collect_layer_edge_coords(self.layer_start))
+                    opt_data["edges_coord"] = json_data.get("opt_edges_coord",
+                                                            self.collect_layer_edge_coords(self.layer_start))
 
                     model = compute_scaffold_model(self.center_before_update, opt_data, self.opt_parameters, False)
-                    self.send_message_scaffoldmodel("loading", model)
+                    self.send_result("loading", "loading", model)
 
                     model = ScaffoldModel()
                     model.fromJSON(self.models[-1].toJSON())
@@ -250,27 +248,37 @@ class SMILP_optimizer:
 
         # remove duplication
         # * preprocessing to remove duplicate points and resolve joints in the middle of bars
-        print(self.line_edges_coord)
-        print(self.fixed_edges_coord)
-        print(self.layers_coord)
 
-        [self.line_vertices_coord,
-         self.line_edges_coord,
-         self.fixed_edges_coord,
-         self.layers_coord] = remove_vertex_duplication(self.line_vertices_coord,
-                                                        self.line_edges_coord,
-                                                        self.fixed_edges_coord,
-                                                        self.layers_coord,
-                                                        self.opt_parameters)
-        print(self.line_edges_coord)
-        print(self.fixed_edges_coord)
-        print(self.layers_coord)
+        if self.stick_model.has_normals():
+            [self.line_vertices_coord,
+             self.line_edges_coord,
+             self.fixed_edges_coord,
+             self.layers_coord,
+             self.normals] = remove_vertex_duplication(self.line_vertices_coord,
+                                                                   self.line_edges_coord,
+                                                                   self.fixed_edges_coord,
+                                                                   self.layers_coord,
+                                                                   self.opt_parameters,
+                                                                   self.normals)
+        else:
+            [self.line_vertices_coord,
+             self.line_edges_coord,
+             self.fixed_edges_coord,
+             self.layers_coord] = remove_vertex_duplication(self.line_vertices_coord,
+                                                            self.line_edges_coord,
+                                                            self.fixed_edges_coord,
+                                                            self.layers_coord,
+                                                            self.opt_parameters)
+
+        if self.opt_parameters["reciprocal"] and self.stick_model.has_normals():
+            self.opt_parameters["fixed_contact_pairs_coord"], self.opt_parameters["fixed_contact_pairs_normals"] = compute_reciprocal_contact_pairs(self.line_vertices_coord, self.line_edges_coord, self.normals)
 
     def check_geometry_match_barlengths(self):
         # * check if any bar is too long
         max_available_length = max(self.beam_available_lengths)
         for i in range(len(self.line_edges_coord)):
-            length = np.linalg.norm(self.line_vertices_coord[self.line_edges_coord[i][0]] - self.line_vertices_coord[self.line_edges_coord[i][1]])
+            length = np.linalg.norm(self.line_vertices_coord[self.line_edges_coord[i][0]] - self.line_vertices_coord[
+                self.line_edges_coord[i][1]])
             if length > max_available_length:
                 raise ValueError(
                     "Line #{} has length {:.3f}, exceeding maximum available length {}. Please scale down your design.".format(
@@ -296,7 +304,6 @@ class SMILP_optimizer:
 
             curr_edges_coord.extend(curr_layer)
 
-
             # skip layers that has been computed
             if curr_layer_id <= self.layer_start:
                 curr_fixed_edges_coord = curr_edges_coord.copy()
@@ -311,7 +318,7 @@ class SMILP_optimizer:
 
             if opt_data["nstatus"] != 0:
                 cprint('No solution found!', 'red')
-                self.send_message_scaffoldmodel("fail")
+                self.send_result("failed", "no solution")
                 return False
 
             curr_fixed_edges_coord = curr_edges_coord.copy()
@@ -330,19 +337,21 @@ class SMILP_optimizer:
 
             running_message = "running (layer_id {})".format(curr_layer_id)
 
-
             model = compute_scaffold_model(self.center_before_update,
-                                        opt_data,
-                                        self.opt_parameters, True,
-                                        {"name": self.file_name, "complete": curr_layer_id + 1 == self.layer_end, "id": curr_layer_id})
-            self.send_message_scaffoldmodel(running_message, model)
+                                           opt_data,
+                                           self.opt_parameters,
+                                           True,
+                                           {"name": self.file_name, "complete": curr_layer_id + 1 == self.layer_end,
+                                            "id": curr_layer_id})
+
+            self.send_result("running", running_message, model)
 
         if opt_data["nstatus"] != 0:
             cprint('No solution found!', 'red')
-            self.send_message_scaffoldmodel("fail")
+            self.send_result("failed", "no solution")
             return False
 
-        self.send_message_scaffoldmodel("succeed")
+        self.send_result("succeed", "find solution", model)
         return True
 
     def run_opt(self, E, V, FE, vs=None, xs=None):
@@ -372,8 +381,10 @@ class SMILP_optimizer:
             if result != None:
                 [vs, xs, curr_radius, curr_collision_dist, contact_pairs] = result
 
-                cprint("it = {}, tr_size = {:.2e}, radius = {:.2e}, clamp_dist = {:.2e}".format(num_it, tr_size, curr_radius,
-                                                                                    curr_collision_dist), 'cyan')
+                cprint("it = {}, tr_size = {:.2e}, radius = {:.2e}, clamp_dist = {:.2e}".format(num_it, tr_size,
+                                                                                                curr_radius,
+                                                                                                curr_collision_dist),
+                       'cyan')
 
                 opt_data = {"vs": vs, "xs": xs,
                             "contact_pairs_coord": contact_pairs,
@@ -384,9 +395,11 @@ class SMILP_optimizer:
                             "vertices_coord": self.line_vertices_coord.copy()}
 
                 model = compute_scaffold_model(self.center_before_update, opt_data, self.opt_parameters, False)
-                self.send_message_scaffoldmodel("(it={}, tr_size={:.2e}, radius={:.2e})".format(num_it, tr_size, curr_radius), model)
 
-                if curr_radius >= (1 - optimality_tol) *  bar_distance\
+                self.send_result("opt", "(it={}, tr_size={:.2e}, radius={:.2e})".format(num_it, tr_size, curr_radius),
+                                 model)
+
+                if curr_radius >= (1 - optimality_tol) * bar_distance \
                         and curr_collision_dist >= (1 - optimality_tol) * clamp_distance:
                     tr_size /= 2
                     num_same_tr_it = 0

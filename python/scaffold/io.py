@@ -1,120 +1,102 @@
-from scaffold import DATA_DIR
-from scaffold.geometry import StickModel, ScaffoldModel
-import numpy as np
-import json
+from scaffold.geometry import ScaffoldModel, StickModel
 import os
+import json
+from scaffold import DATA_DIR
+import numpy as np
 
-class ScaffoldModelImporter:
-
+class StickModelInput:
     def __init__(self):
-        self.clear()
+        self.stick_model = StickModel()
+        self.opt_parameters = {}
 
-    def clear(self):
-        self.lines = []
-        self.adj = []
-        self.cpts = []
-        self.radius = []
+    def loadFile(self, file_name):
+        file_path = os.path.join(DATA_DIR, file_name)
+        with open(file_path, "r") as file:
+            json_data = json.load(file)
+            self.fromJSON(json_data)
 
-    def parse(self, json_data):
-        for point in json_data["line_pt_pairs"]:
-            p0 = point[0]
-            p1 = point[1]
-            self.lines.append([p0, p1])
+    def saveFile(self, file_name="tmp.json"):
+        file_path = os.path.join(DATA_DIR, file_name)
+        print("Save file {} to the folder {}".format(file_name, DATA_DIR))
+        with open(file_path, "w") as file:
+            json.dump(self.toJSON(), file)
 
-        for edge in json_data["contact_id_pairs"]:
-            self.adj.append(edge)
+    def toJSON(self):
+        data = {}
+        data["stick_model"] = self.stick_model.toJSON()
+        data["mt_config"] = self.opt_parameters
+        return data
 
-        for cpts in json_data["coupler_pt_pairs"]:
-            self.cpts.append(cpts)
+    def fromJSON(self, json_data):
+        self.stick_model = StickModel()
+        self.stick_model.fromJSON(json_data["stick_model"])
+        self.opt_parameters = json_data["mt_config"]
+        self.update_parameters()
+        return
 
-        self.lines = np.array(self.lines)
-        self.adj = np.array(self.adj)
-        self.cpts = np.array(self.cpts)
-        self.radius = json_data.get("radius", 0.01)
 
-    @property
-    def model(self):
-        model = ScaffoldModel()
-        model.load_geometry(self.lines, self.adj, self.cpts, self.radius)
-        return model
+    def update_parameters(self):
+        self.opt_parameters["clamp_t_bnd"] = self.opt_parameters.get(
+            "clamp_t_bnd", 0.1)
 
-    def read(self, filename):
-        file_path = os.path.join(DATA_DIR, filename)
+        self.opt_parameters["pos_devi"] = self.opt_parameters.get("pos_devi", 0.05)
 
-        self.clear()
+        self.opt_parameters["orient_devi"] = self.opt_parameters.get("orient_devi", 0.0574532925)
+
+        self.opt_parameters["time_out"] = self.opt_parameters.get("time_out", 300)
+
+        self.opt_parameters["bar_collision_distance"] = self.opt_parameters.get("bar_collision_distance", 0.02)
+
+        self.opt_parameters["clamp_collision_dist"] = self.opt_parameters.get("clamp_collision_dist", 0.024)
+
+        self.opt_parameters["contactopt_trust_region_start"] = self.opt_parameters.get("contactopt_trust_region_start",
+                                                                                       0.1)
+        self.opt_parameters["bar_available_lengths"] = self.opt_parameters.get("bar_available_lengths", [1.0, 2.0])
+
+    def load_from_file_legacy(self, name):
+        file_path = os.path.join(DATA_DIR, name)
         with open(file_path) as file:
             json_data = json.load(file)
-            self.parse(json_data)
+            for point in json_data["nodes"]:
+                point_coord = point["point"]
+                self.stick_model.lineV.append(point_coord)
+            self.stick_model.lineV = np.array(self.stick_model.lineV)
 
-class StickModelImporter:
+            for element in json_data["elements"]:
+                self.stick_model.lineE.append(element["end_node_inds"])
+            self.stick_model.lineE = np.array(self.stick_model.lineE)
+
+            self.stick_model.file_name = name
+            self.stick_model.radius = json_data.get('bar_radius', 0.01)
+            self.opt_parameters = json_data.get('mt_config', {})
+            if "normal_type" in self.opt_parameters\
+                    and self.opt_parameters["normal_type"] == "Sphere":
+                self.stick_model.computeSphereNormals()
+                print(self.stick_model.normals)
+
+class ScaffoldModelOutput:
 
     def __init__(self):
-        self.clear()
+        self.scaffold_model = ScaffoldModel()
+        self.opt_parameters = {}
+        self.status = ""
+        self.print_message = ""
 
-    def clear(self):
-        self.lineV = []
-        self.lineE = []
-        self.parameters = []
-        self.fixed_edge_ids = []
-        self.bar_radius = 0
+    def toJson(self):
+        data = {}
+        if self.scaffold_model.is_valid():
+            data["scaffold_model"] = self.scaffold_model.toJSON()
 
-    @property
-    def model(self):
-        model = StickModel(self.lineV, self.lineE, self.bar_radius)
-        return model
+        data["opt_parameters"] = self.opt_parameters
+        data["status"] = self.status
+        data["print_message"] = self.print_message
+        return data
 
-    @property
-    def start_layer_id(self):
-        return self.parameters.get("layer_range", [-1, -1])[0]
+    def fromJson(self, json_data):
+        self.scaffold_model = ScaffoldModel()
+        if "scaffold_model" in json_data:
+            self.scaffold_model.fromJSON(json_data["scaffold_model"])
 
-    @property
-    def end_layer_id(self):
-        end_layer_id =  self.parameters.get("layer_range", [-1, -1])[1]
-        if end_layer_id >= 0:
-            return end_layer_id
-        else:
-            return len(self.layers)
-
-    @property
-    def layers(self):
-        return self.parameters.get('layers', [list(range(len(self.lineE)))])
-
-    @property
-    def debug_mode(self):
-        return self.parameters.get('debug_mode', 0)
-
-    @property
-    def bar_available_lengths(self):
-        return self.parameters.get('bar_available_lengths', [1])
-
-    def parse(self, json_data):
-        self.parse_geometry(json_data)
-        self.parse_parameters(json_data)
-
-    def parse_geometry(self, json_data):
-        for point in json_data["nodes"]:
-            point_coord = point["point"]
-            self.lineV.append(point_coord)
-        for element in json_data["elements"]:
-            self.lineE.append(element["end_node_inds"])
-
-        self.lineV = np.array(self.lineV)
-        self.lineE = np.array(self.lineE)
-
-    def parse_parameters(self, json_data):
-        self.parameters = json_data['mt_config']
-        self.fixed_edge_ids = json_data.get('fixed_element_ids', [])
-        self.bar_radius = json_data.get('bar_radius', json_data["cross_secs"][0]["radius"])
-
-        # sort bar_available_lengths
-        bar_available_lengths = self.parameters.get("bar_available_lengths", [1])
-        bar_available_lengths.sort()
-        self.parameters["bar_available_lengths"] = self.bar_available_lengths
-
-    def read(self, filename):
-        file_path = os.path.join(DATA_DIR, filename)
-
-        self.clear()
-        with open(file_path) as file:
-            json_data = json.load(file)
-            self.parse(json_data)
+        self.opt_parameters = json_data["opt_parameters"]
+        self.status = json_data["status"]
+        self.print_message = json_data["print_message"]

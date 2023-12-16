@@ -6,7 +6,7 @@ from compas_eve import Topic
 from compas_eve.mqtt import MqttTransport
 from scaffold.gui import ScaffoldOptimizerViewer
 from scaffold.formfind.optimizer import SMILP_optimizer
-from scaffold.geometry import StickModel, ScaffoldModel
+from scaffold.io import StickModelInput, ScaffoldModelOutput
 import multiprocessing as mp
 from multiprocessing import Process, Queue
 import time
@@ -14,41 +14,43 @@ import time
 def update_viewer_stick_model(msg):
     global viewer
     if viewer.running == False:
-        model = StickModel()
-        model.fromJSON(msg)
-
-        viewer.stick_model = model
-        viewer.opt_parameters["layers"] = msg["layers_ind"]
-        viewer.opt_parameters["fixed_element_ids"] = msg["fixed_element_inds"]
+        modelinput = StickModelInput()
+        modelinput.fromJSON(msg)
+        viewer.input = modelinput
         viewer.total_changed = True
-    #viewer.register_model(model)
 
 def update_viewer_scaffold_models(msg):
     global viewer
     if viewer.running == True:
-        viewer.running_msg = msg["msg"]
-        if msg["msg"] == "fail" or msg["msg"] == "succeed":
+        output = ScaffoldModelOutput()
+        output.fromJson(msg)
+        viewer.running_msg = output.print_message
+
+        if output.status == "succeed" or output.status == "failed":
+            viewer.input.opt_parameters = output.opt_parameters
             viewer.running = False
             return
 
-        model = ScaffoldModel()
-        model.fromJSON(msg)
         viewer.refresh = True
-        viewer.models.append(model)
+        viewer.models.append(output.scaffold_model)
 
 def update_optimization(msg):
-
-    optimizer = SMILP_optimizer(msg["name"])
-    print(msg)
-    optimizer.parse_from_json(msg)
+    input = StickModelInput()
+    input.fromJSON(msg)
+    optimizer = SMILP_optimizer(input.stick_model.file_name)
+    optimizer.input_model(input)
     optimizer.solve()
 
 def gui_process(queue):
     global viewer
-    filename = queue.get()
-
     viewer = ScaffoldOptimizerViewer()
-    viewer.load_from_file(filename)
+
+    data = queue.get()
+    if data["file_type"] == "legacy":
+        viewer.load_from_file_legacy(data["file"])
+    elif data["file_type"] == "current":
+        viewer.load_from_file(data["file"])
+
     tx = MqttTransport("localhost")
 
     topic = Topic("/scaffold/stick_model/", Message)

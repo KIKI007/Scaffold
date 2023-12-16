@@ -27,9 +27,28 @@ def create_bar_distance_constraints(m, vs, xs, Dx_vars, Dv_vars, radius, contact
         xA = xs[edgeI]
         xB = xs[edgeJ]
 
+        if parameters["reciprocal"]:
+            sign = True
+            item = None
+            if [edgeI_coord, edgeJ_coord] in parameters["fixed_contact_pairs_coord"]:
+                item = [edgeI_coord, edgeJ_coord]
+            elif [edgeJ_coord, edgeI_coord] in parameters["fixed_contact_pairs_coord"]:
+                sign = not sign
+                item = [edgeJ_coord, edgeI_coord]
+
+            if item is not None:
+                index = parameters["fixed_contact_pairs_coord"].index(item)
+                vn = np.array(parameters["fixed_contact_pairs_normals"][index])
+                if vn.dot(np.cross(nA, nB)) < 0:
+                    sign = not sign
+
+                m.addConstr(sign_var == sign)
+
         if [edgeI_coord, edgeJ_coord] in parameters["fixed_contact_pairs_coord"] or \
             [edgeJ_coord, edgeI_coord] in parameters["fixed_contact_pairs_coord"]:
             m.addConstr(contact_var == 1)
+        elif parameters["reciprocal"]:
+            m.addConstr(contact_var == 0)
 
         if edgeI_fix and edgeJ_fix:
             if [edgeI_coord, edgeJ_coord] in parameters["fixed_contact_pairs_coord"] or \

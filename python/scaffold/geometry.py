@@ -2,6 +2,9 @@ import numpy as np
 import igl
 from scaffold import COUPLER_OBJ_PATH, COUPLER_COARSE_OBJ_PATH, COUPLER_COLLI_OBJ_PATHs
 import xml.etree.cElementTree as ET
+import json
+from scaffold import DATA_DIR
+import os
 
 class StickModel:
 
@@ -10,13 +13,24 @@ class StickModel:
         self.lineE = np.copy(lineE)
         self.radius = radius
 
-
     def __init__(self):
         self.name = "stick"
         self.file_name = ""
         self.lineV = []
         self.lineE = []
         self.radius = 0
+
+    def is_valid(self):
+        if self.lineV is not [] and self.lineE is not []:
+            return True
+        else:
+            return False
+
+    def has_normals(self):
+        if hasattr(self, "normals"):
+            return True
+        else:
+            return False
 
     def toJSON(self):
         data = {
@@ -25,25 +39,36 @@ class StickModel:
             "radius": self.radius,
             "file_name": self.file_name
         }
+
+        if self.has_normals():
+            data["normals"] = self.normals.tolist()
+
         return data
 
     def fromJSON(self, json_data):
         self.lineV = np.array(json_data["vertices"])
         self.lineE = np.array(json_data["edges"])
         self.radius = json_data["radius"]
+        if "normals" in json_data:
+            self.normals = np.array(json_data["normals"])
         self.file_name = json_data["file_name"]
 
-    def NodetoJSON(self):
-        result = []
-        for v in self.lineV:
-            result.append({"point": [v[0], v[1], v[2]]})
-        return result
+    def computeNormalLines(self, length = 0.1):
+        V = []
+        E = []
+        for id, v in enumerate(self.lineV):
+            V.append(v)
+            V.append(v + self.normals[id] * length)
+            E.append([len(V) - 2, len(V) - 1])
+        V = np.array(V)
+        E = np.array(E)
+        return V, E
 
-    def EdgeToJSON(self):
-        result = []
-        for e in self.lineE:
-            result.append({"end_node_inds": [e[0], e[1]]})
-        return result
+    def computeSphereNormals(self):
+        self.normals = []
+        for v in self.lineV:
+            self.normals.append(v / np.linalg.norm(v))
+        self.normals = np.array(self.normals)
 
 class ScaffoldModel:
 
@@ -63,6 +88,12 @@ class ScaffoldModel:
         self.coupler_geometry = None
         self.coupler_colliders = []
         self.coupler_collider_names = []
+
+    def is_valid(self):
+        if hasattr(self, "lines") and hasattr(self, "adj") and hasattr(self, "coupler_contact_pts") and hasattr(self, "radius"):
+            return True
+        else:
+            return False
 
     def toJSON(self):
         data = {
@@ -191,3 +222,4 @@ class ScaffoldModel:
         tree = ET.ElementTree(root)
         tree.write("file.xml")
         return ET.tostring(root, encoding='us-ascii')
+
