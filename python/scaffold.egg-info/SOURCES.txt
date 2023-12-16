@@ -1,10 +1,13 @@
+LICENSE
 README.md
 setup.py
 python/scaffold/__init__.py
 python/scaffold/__version__.py
+python/scaffold/collision.py
 python/scaffold/geometry.py
 python/scaffold/gui.py
 python/scaffold/io.py
+python/scaffold/process_managers.py
 python/scaffold.egg-info/PKG-INFO
 python/scaffold.egg-info/SOURCES.txt
 python/scaffold.egg-info/dependency_links.txt

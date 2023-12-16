@@ -7,6 +7,4 @@ Author: Ziqi Wang
 Author-email: ziqi.wang@inf.ethz.ch
 License: MIT
 Classifier: Programming Language :: Python :: 3.10
-Requires-Dist: gurobipy==10.0.2
-Requires-Dist: jax==0.3.25
-Requires-Dist: polyscope==1.3.4
+License-File: LICENSE
