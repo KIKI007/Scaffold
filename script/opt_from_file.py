@@ -9,7 +9,7 @@ if __name__ == "__main__":
     parser.add_argument('-lp', #'--legacy_problem', default="one_tet.json",
                         help='legacy way of loading .json file')
 
-    parser.add_argument("-p", '--problem', default="reciprocal_dome.json",
+    parser.add_argument("-p", '--problem', default="nonreciprocal_dome.json",
                         help='current way of loading .json file')
 
     args = parser.parse_args()
