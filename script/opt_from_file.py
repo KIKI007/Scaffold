@@ -6,7 +6,7 @@ import argparse
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-lp', '--legacy_problem', #default="geodesic_dome.json",
+    parser.add_argument('-lp', #'--legacy_problem', default="one_tet.json",
                         help='legacy way of loading .json file')
 
     parser.add_argument("-p", '--problem', default="reciprocal_dome.json",

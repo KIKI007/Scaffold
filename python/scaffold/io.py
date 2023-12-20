@@ -100,3 +100,8 @@ class ScaffoldModelOutput:
         self.opt_parameters = json_data["opt_parameters"]
         self.status = json_data["status"]
         self.print_message = json_data["print_message"]
+
+    def toJsonLegacy(self):
+        data = {}
+        if self.scaffold_model.is_valid():
+            data = self.scaffold_model.toJSONLegacy()

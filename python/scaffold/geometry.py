@@ -104,6 +104,30 @@ class ScaffoldModel:
         }
         return data
 
+    def toJSONLegacy(self):
+        data = {
+            "line_pt_pairs": self.lines.tolist(),
+            "half_couplers": []
+        }
+
+        for coupler_id in range(len(self.adj)):
+            for side_id in range(2):
+                half_couplers_data = {}
+                half_couplers_data["pose"] = []
+
+                mat, vec = self.coupler_transformation_matrix(coupler_id, side_id)
+                mat = mat.T
+                T = np.eye(4, dtype=float)
+                T[:3, :3] = mat
+                T[:3, 3]  = vec
+                for id in range(4):
+                    half_couplers_data["pose"].append(T[:, id].tolist())
+                half_couplers_data["at_element"] = int(self.adj[coupler_id][side_id])
+                half_couplers_data["to_element"] = int(self.adj[coupler_id][(side_id + 1) % 2])
+                data["half_couplers"].append(half_couplers_data)
+
+        return data
+
     def fromJSON(self, json_data):
         self.name = "scaffold"
         self.lines = np.array(json_data["line"])
