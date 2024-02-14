@@ -100,16 +100,14 @@ class ScaffoldModel:
             "line": self.lines.tolist(),
             "adj": self.adj.tolist(),
             "coupler_contact_pts": self.coupler_contact_pts.tolist(),
-            "radius": self.radius
+            "radius": self.radius,
+            "half_couplers": self.halfCouplersJson()
         }
+
         return data
 
-    def toJSONLegacy(self):
-        data = {
-            "line_pt_pairs": self.lines.tolist(),
-            "half_couplers": []
-        }
-
+    def halfCouplersJson(self):
+        half_couplers = []
         for coupler_id in range(len(self.adj)):
             for side_id in range(2):
                 half_couplers_data = {}
@@ -124,7 +122,14 @@ class ScaffoldModel:
                     half_couplers_data["pose"].append(T[:, id].tolist())
                 half_couplers_data["at_element"] = int(self.adj[coupler_id][side_id])
                 half_couplers_data["to_element"] = int(self.adj[coupler_id][(side_id + 1) % 2])
-                data["half_couplers"].append(half_couplers_data)
+                half_couplers.append(half_couplers_data)
+        return half_couplers
+
+    def toJSONLegacy(self):
+        data = {
+            "line_pt_pairs": self.lines.tolist(),
+            "half_couplers": self.halfCouplersJson()
+        }
 
         return data
 
