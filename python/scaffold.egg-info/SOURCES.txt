@@ -13,3 +13,5 @@ python/scaffold.egg-info/SOURCES.txt
 python/scaffold.egg-info/dependency_links.txt
 python/scaffold.egg-info/requires.txt
 python/scaffold.egg-info/top_level.txt
+python/scaffold/backup/__init__.py
+python/scaffold/backup/io.py
