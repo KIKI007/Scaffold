@@ -9,6 +9,7 @@ from compas_eve import Subscriber
 from compas_eve import Publisher
 from compas_eve import Topic
 from compas_eve.mqtt import MqttTransport
+from scaffold.collision import CollisionSolver
 import time
 import json
 import os
@@ -19,7 +20,16 @@ class ScaffoldViewer:
         ps.set_navigation_style("turntable")
         ps.set_up_dir("z_up")
         ps.set_ground_plane_mode('none')
+        ps.set_user_callback(self.interface_scaffold)
         self.show_clamps = False
+        self.re_render = False
+
+        self.model_select_table = ["None"]
+        self.user_select_model_id = self.model_select_table[0]
+        self.model_name_map = {}
+
+        self.input = StickModelInput()
+        self.models = []
 
     def register_model(self, model):
         if hasattr(model, 'name'):
@@ -28,7 +38,7 @@ class ScaffoldViewer:
                 self.register_lines_for_stickmodel(model)
             elif model.name == "scaffold":
                 self.register_lines(model.lines, model.radius)
-                if model.coupler_geometry != None and self.show_clamps:
+                if model.coupler_geometry != None:
                     self.register_couplers(model)
 
     def register_lines_for_stickmodel(self, model):
@@ -54,13 +64,92 @@ class ScaffoldViewer:
         curves.set_radius(radius, relative=False)
 
     def register_couplers(self, model):
-        for id in range(len(model.adj)):
-            for jd in range(0, 2):
-                [V, F] = model.coupler(id, jd)
-                coupler_obj = ps.register_surface_mesh(name="coupler" + str(2 * id + jd), vertices=V, faces=F, color=(1,1,0.1,1))
+        coupler_id = 0
+        while True:
+            if ps.has_surface_mesh("coupler {}".format(coupler_id)):
+                ps.remove_surface_mesh("coupler {}".format(coupler_id))
+                coupler_id = coupler_id + 1
+            else:
+                break
+        ps.remove_group("coupler", False)
+
+        coupler_group = ps.create_group("coupler")
+        coupler_group.set_show_child_details(False)
+        coupler_group.set_hide_descendants_from_structure_lists(True)
+
+        if self.show_clamps:
+            for id in range(len(model.adj)):
+                for jd in range(0, 2):
+                    [V, F] = model.coupler(id, jd)
+                    coupler_obj = ps.register_surface_mesh(name="coupler {}".format(2 * id + jd), vertices=V, faces=F, color=(1,1,0.1,1))
+                    coupler_obj.add_to_group(coupler_group)
+
+    def interface_scaffold(self):
+        psim.PushItemWidth(150)
+        # title
+        if self.input.stick_model.is_valid():
+            psim.TextUnformatted("Model:\t {} {}".format(self.input.stick_model.file_name, self.running_msg))
+
+        # model for rendering
+        psim.SetNextItemOpen(True, psim.ImGuiCond_FirstUseEver)
+        changed = psim.BeginCombo("Optimized Models", self.user_select_model_id)
+        if changed:
+            for val in self.model_select_table:
+                _, selected = psim.Selectable(val, self.user_select_model_id == val)
+                if selected:
+                    self.user_select_model_id = val
+                    self.show_clamps = False
+            psim.EndCombo()
+        self.re_render = self.re_render or changed
+
+        if self.get_current_model() != None:
+            changed, self.get_current_model().radius= psim.InputFloat("radius", self.get_current_model().radius)
+            self.re_render = self.re_render or changed
+
+        changed, self.show_clamps = psim.Checkbox("Clamps", self.show_clamps)
+        self.re_render = self.re_render or changed
+
+        psim.SameLine()
+
+        if psim.Button("Clear"):
+            self.models = []
+            self.model_select_table = ["None"]
+            self.model_name_map = {}
+            self.re_render = True
+
+        psim.SameLine()
+        if psim.Button("Collision"):
+            model = self.get_current_model()
+            if model != None:
+                solver = CollisionSolver(model)
+                solver.solve()
+
+        psim.PopItemWidth()
+        self.update_render()
+
+    def add_scaffold_model(self, model):
+        self.models.append(model)
+        self.model_select_table.append(model.name)
+        self.model_name_map[model.name] = self.models[-1]
+        self.user_select_model_id = model.name
+        self.re_render = True
+
+    def get_current_model(self):
+        if self.user_select_model_id in self.model_name_map:
+            return self.model_name_map[self.user_select_model_id]
+        return None
 
     def show(self):
         ps.show()
+
+    def update_render(self):
+        if self.re_render:
+            #ps.remove_all_structures()
+            if hasattr(self, "input") and self.input.stick_model.is_valid():
+                self.register_model(self.input.stick_model)
+            if self.user_select_model_id != "None" and self.user_select_model_id in self.model_name_map:
+                self.register_model(self.model_name_map[self.user_select_model_id])
+            self.re_render = False
 
 class ScaffoldOptimizerViewer(ScaffoldViewer):
 
@@ -79,18 +168,9 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
         self.interface_system = [
 
         ]
-        ps.set_user_callback(self.set_customized_interface)
-
-        self.model_select_table = ["None"]
-        self.user_select_model_id = self.model_select_table[0]
-        self.model_name_map = {}
-
-        self.input = StickModelInput()
-        self.models = []
+        ps.set_user_callback(self.interface_opt)
 
         # data
-        self.total_changed = False
-        self.refresh = False
         self.running = False
         self.running_msg = ""
 
@@ -119,29 +199,10 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
             self.running_msg = ""
             time.sleep(1)
 
-    def set_customized_interface(self):
+    def interface_opt(self):
         psim.PushItemWidth(150)
-
-        # title
-        if self.input.stick_model.is_valid():
-            psim.TextUnformatted("Model:\t {} {}".format(self.input.stick_model.file_name, self.running_msg))
-
-        # model for rendering
-        psim.SetNextItemOpen(True, psim.ImGuiCond_FirstUseEver)
-        changed = psim.BeginCombo("Optimized Models", self.user_select_model_id)
-        if changed:
-            for val in self.model_select_table:
-                _, selected = psim.Selectable(val, self.user_select_model_id == val)
-                if selected:
-                    self.user_select_model_id = val
-                    self.show_clamps = False
-            psim.EndCombo()
-        self.total_changed = self.total_changed or changed
-
-        psim.SameLine()
-
-        changed, self.show_clamps = psim.Checkbox("Clamps", self.show_clamps)
-        self.total_changed = self.total_changed or changed
+        # scaffold interface
+        self.interface_scaffold()
 
         psim.Separator()
 
@@ -150,14 +211,6 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
 
             if psim.Button("Optimize"):
                 self.send_optimization_command()
-
-            psim.SameLine()
-
-            if psim.Button("Clear"):
-                self.models = []
-                self.model_name_map = {}
-                self.refresh = True
-                self.total_changed = True
 
             psim.SetNextItemOpen(True, psim.ImGuiCond_FirstUseEver)
             if psim.TreeNode("Parameters (Important)"):
@@ -194,22 +247,4 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
                                                                                    self.input.opt_parameters[item["name"]])
             psim.TreePop()
 
-        # update tables
-        if  self.refresh:
-            self.total_changed = True
-            self.model_select_table = ["None"]
-            self.model_name_map = {}
-            for id in range(len(self.models)):
-                name = "model{}".format(id)
-                self.model_select_table.append(name)
-                self.model_name_map[name] = self.models[id]
-            self.user_select_model_id = self.model_select_table[-1]
-
-        if self.total_changed:
-            ps.remove_all_structures()
-            self.register_model(self.input.stick_model)
-            if self.user_select_model_id != "None" and self.user_select_model_id in self.model_name_map:
-                self.register_model(self.model_name_map[self.user_select_model_id])
-
-        self.total_changed = False
-        self.refresh = False
+        self.update_render()

@@ -14,47 +14,46 @@ def list_to_pairs(inds):
 def listify(d):
     return list(map(list, d))
 
-def write_json_smilp(opt_data,
-                     line_pts,
-                     coupler_endpts,
-                     smilp_parameters,
-                     problem_name,
-                     contact_opt = False,
-                     layer_id = None):
-
-    if problem_name.endswith('.json'):
-        problem_name = problem_name[:-5]
-
-    suffix = '' if layer_id is None else '_layer_' + str(layer_id)
-    if contact_opt:
-        suffix += '_contact'
-    save_path = os.path.join(MT_DIR, problem_name + '_MT' + suffix + '.json')
-
-    contact_pairs_coord = opt_data["contact_pairs_coord"]
-    nstatus = opt_data["nstatus"]
-    xs = opt_data["xs"]
-    vs = opt_data["vs"]
-
-    line_endpt_pairs = list_to_pairs(listify(line_pts))
-    coupler_endpt_pairs = list_to_pairs(listify(coupler_endpts))
-
-
-    data = {
-        'line_pt_pairs' : line_endpt_pairs,
-        'contact_pairs_coord' : contact_pairs_coord,
-        'coupler_pt_pairs' : coupler_endpt_pairs,
-        'nstatus' : nstatus,
-        'opt_line_pos': [[x[0], x[1], x[2]] for x in xs],
-        'opt_line_orient': [[v[0], v[1], v[2]] for v in vs],
-        'opt_edges_coord': opt_data['edges_coord'],
-        'opt_parameters': smilp_parameters
-    }
-
-
-    with open(save_path, 'w') as f:
-        json.dump(data, f, indent=0)
-
-    cprint('data saved to {}'.format(save_path), 'green')
+# def write_json_smilp(opt_data,
+#                      line_pts,
+#                      coupler_endpts,
+#                      smilp_parameters,
+#                      problem_name,
+#                      contact_opt = False,
+#                      layer_id = None):
+#
+#     if problem_name.endswith('.json'):
+#         problem_name = problem_name[:-5]
+#
+#     suffix = '' if layer_id is None else '_layer_' + str(layer_id)
+#     if contact_opt:
+#         suffix += '_contact'
+#     save_path = os.path.join(MT_DIR, problem_name + '_MT' + suffix + '.json')
+#
+#     contact_pairs_coord = opt_data["contact_pairs_coord"]
+#     nstatus = opt_data["nstatus"]
+#     xs = opt_data["xs"]
+#     vs = opt_data["vs"]
+#
+#     line_endpt_pairs = list_to_pairs(listify(line_pts))
+#     coupler_endpt_pairs = list_to_pairs(listify(coupler_endpts))
+#
+#     data = {
+#         'line_pt_pairs' : line_endpt_pairs,
+#         'contact_pairs_coord' : contact_pairs_coord,
+#         'coupler_pt_pairs' : coupler_endpt_pairs,
+#         'nstatus' : nstatus,
+#         'opt_line_pos': [[x[0], x[1], x[2]] for x in xs],
+#         'opt_line_orient': [[v[0], v[1], v[2]] for v in vs],
+#         'opt_edges_coord': opt_data['edges_coord'],
+#         'opt_parameters': smilp_parameters
+#     }
+#
+#
+#     with open(save_path, 'w') as f:
+#         json.dump(data, f, indent=0)
+#
+#     cprint('data saved to {}'.format(save_path), 'green')
 
 def convex_combination(x1, x2, w=0.5):
     assert 0 <= w and w <= 1

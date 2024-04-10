@@ -24,7 +24,7 @@ exec(read('python', 'scaffold', '__version__.py'), about)
 requirements = [
     "gurobipy==10.0.2",
     "jax==0.4.21",
-    "polyscope==1.3.4",
+    "polyscope==2.2.1",
     "libigl==2.4.1",
     "compas_eve==0.3.4",
     "termcolor",

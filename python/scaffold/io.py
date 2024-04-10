@@ -55,6 +55,8 @@ class StickModelInput:
 
     def load_from_file_legacy(self, name):
         file_path = os.path.join(DATA_DIR, name)
+        self.stick_model.lineV = []
+        self.stick_model.lineE = []
         with open(file_path) as file:
             json_data = json.load(file)
             for point in json_data["nodes"]:

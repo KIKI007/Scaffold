@@ -4,12 +4,15 @@ from compas_eve import Subscriber
 from compas_eve import Publisher
 from compas_eve import Topic
 from compas_eve.mqtt import MqttTransport
-from scaffold.gui import ScaffoldOptimizerViewer
+from scaffold.gui import ScaffoldOptimizerViewer, ScaffoldViewer
 from scaffold.formfind.optimizer import SMILP_optimizer
 from scaffold.io import StickModelInput, ScaffoldModelOutput
+from scaffold.geometry import ScaffoldModel
+from scaffold import MT_DIR
 import multiprocessing as mp
 from multiprocessing import Process, Queue
 import time
+import os
 
 def update_viewer_stick_model(msg):
     global viewer
@@ -31,8 +34,7 @@ def update_viewer_scaffold_models(msg):
             viewer.running = False
             return
 
-        viewer.refresh = True
-        viewer.models.append(output.scaffold_model)
+        viewer.add_scaffold_model(output.scaffold_model)
 
 def update_optimization(msg):
     input = StickModelInput()
@@ -43,23 +45,35 @@ def update_optimization(msg):
 
 def gui_process(queue):
     global viewer
-    viewer = ScaffoldOptimizerViewer()
-
     data = queue.get()
-    if data["file_type"] == "legacy":
-        viewer.load_from_file_legacy(data["file"])
-    elif data["file_type"] == "current":
-        viewer.load_from_file(data["file"])
 
-    tx = MqttTransport("localhost")
+    # visualization
+    if data["file_type"] == "visualization":
+        viewer = ScaffoldViewer()
+        model = ScaffoldModel()
+        path = os.path.join(MT_DIR, data["file"])
+        with open(path) as file:
+            json_assembly = json.load(file)
+            model.fromJSON(json_assembly)
+            model.load_default_collision_coupler()
+            viewer.add_scaffold_model(model)
+    else:
+        # optimization
+        viewer = ScaffoldOptimizerViewer()
+        if data["file_type"] == "legacy":
+            viewer.load_from_file_legacy(data["file"])
+        elif data["file_type"] == "current":
+            viewer.load_from_file(data["file"])
 
-    topic = Topic("/scaffold/stick_model/", Message)
-    subscriber_stick = Subscriber(topic, callback=update_viewer_stick_model, transport=tx)
-    subscriber_stick.subscribe()
+        tx = MqttTransport("localhost")
 
-    topic = Topic("/opt/scaffold_model/", Message)
-    subscriber_scaffold = Subscriber(topic, callback=update_viewer_scaffold_models, transport=tx)
-    subscriber_scaffold.subscribe()
+        topic = Topic("/scaffold/stick_model/", Message)
+        subscriber_stick = Subscriber(topic, callback=update_viewer_stick_model, transport=tx)
+        subscriber_stick.subscribe()
+
+        topic = Topic("/opt/scaffold_model/", Message)
+        subscriber_scaffold = Subscriber(topic, callback=update_viewer_scaffold_models, transport=tx)
+        subscriber_scaffold.subscribe()
 
     viewer.show()
 

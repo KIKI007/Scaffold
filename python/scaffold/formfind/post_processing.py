@@ -3,7 +3,7 @@ import json
 import numpy as np
 import gurobipy as gp
 from gurobipy import GRB
-from scaffold.formfind.util import compute_closest_t_between_lines, write_json_smilp
+from scaffold.formfind.util import compute_closest_t_between_lines
 from scaffold.geometry import ScaffoldModel
 from scaffold import MT_DIR
 import os
@@ -36,16 +36,6 @@ def compute_scaffold_model(ct, opt_data, opt_parameters, save=False, format=None
                                                  resultV[e2_ind * 2 + 1])
         contact_ts.extend([t1, t2])
 
-    # save to file
-    if save:
-        write_json_smilp(opt_data,
-                         resultV,
-                         resultCouplerV,
-                         opt_parameters,
-                         problem_name = format["name"],
-                         contact_opt=format["complete"],
-                         layer_id=format["id"])
-
     # save to model
     line = []
     for id in range(int(len(resultV) / 2)):
@@ -68,9 +58,9 @@ def compute_scaffold_model(ct, opt_data, opt_parameters, save=False, format=None
         if problem_name.endswith('.json'):
             problem_name = problem_name[:-5]
         layer_id = format["id"]
-        suffix = '_layer_' + str(layer_id) + "_legacy"
+        suffix = '_layer_' + str(layer_id)
         save_path = os.path.join(MT_DIR, problem_name + suffix + '.json')
-        model_json = model.toJSONLegacy()
+        model_json = model.toJSON()
         with open(save_path, "w") as file:
             print("model save to {}".format(save_path))
             json.dump(model_json, file)

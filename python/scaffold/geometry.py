@@ -16,12 +16,12 @@ class StickModel:
     def __init__(self):
         self.name = "stick"
         self.file_name = ""
-        self.lineV = []
-        self.lineE = []
+        self.lineV = np.array([])
+        self.lineE = np.array([])
         self.radius = 0
 
     def is_valid(self):
-        if self.lineV is not [] and self.lineE is not []:
+        if self.lineV.shape[0] != 0 and self.lineE.shape[0] != 0:
             return True
         else:
             return False
@@ -81,13 +81,24 @@ class ScaffoldModel:
         self.radius = radius
         self.compute_center()
 
-    def __init__(self, ):
-        self.name = "scaffold"
-
-        # geometry asset
-        self.coupler_geometry = None
-        self.coupler_colliders = []
-        self.coupler_collider_names = []
+    def __init__(self, model = None):
+        if model is None:
+            self.name = "scaffold"
+            # geometry asset
+            self.coupler_geometry = None
+            self.coupler_colliders = []
+            self.coupler_collider_names = []
+        else:
+            self.name = model.name
+            self.coupler_geometry = model.coupler_geometry
+            self.coupler_colliders = model.coupler_colliders
+            self.coupler_collider_names = model.coupler_collider_names
+            self.lines = model.lines
+            self.adj = model.adj
+            self.coupler_signs = model.coupler_signs
+            self.coupler_contact_pts = model.coupler_contact_pts
+            self.radius = model.radius
+            self.compute_center()
 
     def is_valid(self):
         if hasattr(self, "lines") and hasattr(self, "adj") and hasattr(self, "coupler_contact_pts") and hasattr(self, "radius"):
@@ -151,6 +162,34 @@ class ScaffoldModel:
             self.center += (psta + pend) / 2;
         self.center /= len(self.lines)
 
+    def beam_mat4(self, line_id):
+        height = np.linalg.norm(self.lines[line_id][1] - self.lines[line_id][0])
+
+        # axis
+        zaxis = self.lines[line_id][1] - self.lines[line_id][0]
+        zaxis /= np.linalg.norm(zaxis)
+
+        # yaxis
+        yaxis = np.cross(np.array([0, 0, 1]), zaxis)
+        if np.linalg.norm(yaxis) < 1E-6:
+            yaxis = np.array([0, 1, 0]).cross(zaxis)
+        yaxis /= np.linalg.norm(yaxis)
+
+        # xaixs
+        xaxis = np.cross(yaxis, zaxis)
+        xaxis /= np.linalg.norm(xaxis)
+
+        # orgin
+        origin = (self.lines[line_id][1] + self.lines[line_id][0]) / 2
+
+        # mat4
+        xaxis = np.vstack([*xaxis, 0])
+        yaxis = np.vstack([*yaxis, 0])
+        zaxis = np.vstack([*zaxis, 0])
+        origin = np.vstack([*origin, 1])
+        mat = np.hstack([xaxis, yaxis, zaxis, origin])
+        return mat, self.radius, height
+
     def coupler_transformation_matrix(self, coupler_id, side_id):
         edge_id = self.adj[coupler_id][side_id]
         zaxis = self.lines[edge_id][1] - self.lines[edge_id][0]
@@ -165,6 +204,13 @@ class ScaffoldModel:
         mat = np.vstack([xaxis, yaxis, zaxis])
         vec = self.coupler_contact_pts[coupler_id][side_id]
         return mat, vec
+
+    def coupler_mat4(self, coupler_id, side_id):
+        mat, vec = self.coupler_transformation_matrix(coupler_id, side_id)
+        mat4 = np.eye(4)
+        mat4[:3, :3] = mat.T
+        mat4[:3, 3] = vec
+        return mat4
 
     def coupler(self, coupler_id, side_id):
         if self.coupler_geometry != None:
@@ -182,14 +228,14 @@ class ScaffoldModel:
         self.coupler_geometry = {"V": np.array(V), "F": np.array(F)}
 
     def load_default_collision_coupler(self):
-        V = []
-        F = []
-        for path in COUPLER_COLLI_OBJ_PATHs:
-            pV, pF = igl.read_triangle_mesh(path)
-            pV = np.array(pV)
-            pF = np.array(pF)
-            self.coupler_colliders.append([pV, pF])
+        self.coupler_colliders = []
 
+        if abs(self.radius - 0.01) < 1E-6:
+            for path in COUPLER_COLLI_OBJ_PATHs:
+                pV, pF = igl.read_triangle_mesh(path)
+                pV = np.array(pV)
+                pF = np.array(pF)
+                self.coupler_colliders.append([pV, pF])
 
     ##################
     ### for mujoco ###
