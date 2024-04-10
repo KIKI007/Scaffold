@@ -20,7 +20,7 @@ def update_viewer_stick_model(msg):
         modelinput = StickModelInput()
         modelinput.fromJSON(msg)
         viewer.input = modelinput
-        viewer.total_changed = True
+        viewer.re_render = True
 
 def update_viewer_scaffold_models(msg):
     global viewer

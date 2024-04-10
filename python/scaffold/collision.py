@@ -3,6 +3,7 @@ from pytransform3d.transform_manager import TransformManager
 from distance3d.colliders import Capsule, MeshGraph
 from distance3d.broad_phase import BoundingVolumeHierarchy
 from distance3d.gjk import gjk
+from distance3d.mpr import mpr_penetration
 from distance3d.urdf_utils import fast_transform_manager_initialization
 import numpy as np
 import polyscope as ps
@@ -23,13 +24,11 @@ class CollisionSolver(ScaffoldModel):
         ps.remove_group("collision", False)
         group = ps.create_group("collision")
 
-        collision_margin = 1e-9
+        collision_margin = 1E-3
         tm = TransformManager(check=False)
         bvh = BoundingVolumeHierarchy(tm, "base")
 
         num_colliders = len(self.lines) + len(self.adj) * 6 * len(self.coupler_colliders)
-        print(num_colliders)
-
         fast_transform_manager_initialization(tm, range(num_colliders), "base")
 
         collider_id = 0
@@ -85,17 +84,22 @@ class CollisionSolver(ScaffoldModel):
         for (frame1, collider1), (frame2, collider2) in pairs:
             if [frame1, frame2] not in exclude_pairs and frame1 < frame2:
                 dist, point1, point2, _ = gjk(collider1, collider2)
-                if dist < collision_margin:
+                if dist < 1E-6:
+                    _, depth, _, _ = mpr_penetration(collider1, collider2)
+                    print(frame1, frame2, depth)
+                    if depth == None or depth < collision_margin:
+                        continue
 
                     [v1, f1] = objs[frame1]
                     [v2, f2] = objs[frame2]
 
-                    pair1 = ps.register_surface_mesh("collision pair {} 1".format(collisions_paris_id), v1, f1)
+                    pair1 = ps.register_surface_mesh("pair{}_1".format(collisions_paris_id), v1, f1)
                     pair1.set_color((1, 1, 0))
-                    pair2 = ps.register_surface_mesh("collision pair {} 2".format(collisions_paris_id), v2, f2)
+                    pair2 = ps.register_surface_mesh("pair{}_2".format(collisions_paris_id), v2, f2)
                     pair2.set_color((1, 1, 0))
 
-                    pair12 = ps.create_group("collision pair {}".format(collisions_paris_id))
+                    pair12 = ps.create_group("pair{} : {:.3f}".format(collisions_paris_id, depth))
+
                     pair1.add_to_group(pair12)
                     pair2.add_to_group(pair12)
 

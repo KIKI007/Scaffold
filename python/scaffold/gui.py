@@ -42,6 +42,8 @@ class ScaffoldViewer:
                     self.register_couplers(model)
 
     def register_lines_for_stickmodel(self, model):
+        ps.remove_curve_network("normal", False)
+
         # lines
         curves = ps.register_curve_network(name = "stick_frame", nodes = model.lineV, edges = model.lineE, color=(0.8, 0.5, 0), transparency=0.2)
         curves.set_radius(model.radius, relative=False)
@@ -121,6 +123,12 @@ class ScaffoldViewer:
         if psim.Button("Collision"):
             model = self.get_current_model()
             if model != None:
+
+                if self.show_clamps:
+                    model.load_default_collision_coupler()
+                else:
+                    model.coupler_colliders = []
+
                 solver = CollisionSolver(model)
                 solver.solve()
 
