@@ -10,8 +10,10 @@ Classifier: Programming Language :: Python :: 3.10
 License-File: LICENSE
 Requires-Dist: gurobipy==10.0.2
 Requires-Dist: jax==0.4.21
-Requires-Dist: polyscope==1.3.4
+Requires-Dist: polyscope==2.2.1
 Requires-Dist: libigl==2.4.1
-Requires-Dist: compas_eve==0.3.4
+Requires-Dist: compas_eve
 Requires-Dist: termcolor
 Requires-Dist: jaxlib==0.4.21
+Requires-Dist: distance3d
+Requires-Dist: open3d

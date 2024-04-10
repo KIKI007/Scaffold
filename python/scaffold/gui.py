@@ -13,7 +13,7 @@ from scaffold.collision import CollisionSolver
 import time
 import json
 import os
-
+from scaffold import SERVER_NAME
 class ScaffoldViewer:
     def __init__(self):
         ps.init()
@@ -197,7 +197,7 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
     def send_optimization_command(self):
         if self.input.stick_model.is_valid():
             topic = Topic("/opt/problem_request/", Message)
-            tx = MqttTransport(host="localhost")
+            tx = MqttTransport(host=SERVER_NAME)
             publisher = Publisher(topic, transport=tx)
             msg = Message(self.input.toJSON())
             self.input.saveFile()

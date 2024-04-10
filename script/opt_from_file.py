@@ -6,7 +6,7 @@ import argparse
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-lp', '--legacy_problem',
+    parser.add_argument('-lp', '--legacy_problem', default="one_tet.json",
                         help='legacy way of loading stick model .json file')
 
     parser.add_argument("-p", '--problem',

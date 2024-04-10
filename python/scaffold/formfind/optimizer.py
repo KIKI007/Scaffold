@@ -16,7 +16,7 @@ from compas_eve.mqtt import MqttTransport
 import time
 import multiprocessing as mp
 from multiprocessing import Process
-
+from scaffold import SERVER_NAME
 
 class SMILP_optimizer:
 
@@ -159,7 +159,7 @@ class SMILP_optimizer:
     def send_result_message(self, queue):
         data = queue.get()
         topic = Topic("/opt/scaffold_model/", Message)
-        tx = MqttTransport(host="localhost")
+        tx = MqttTransport(host=SERVER_NAME)
         publisher = Publisher(topic, transport=tx)
         msg = Message(data)
         publisher.publish(msg)

@@ -1,5 +1,6 @@
 import os
 
+SERVER_NAME = "localhost"
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'multi_tangent_data', 'frame_assembly'))
 MT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'multi_tangent_data', 'mt_results'))
 COUPLER_OBJ_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), 'coupler', 'coupler.obj'))

@@ -26,9 +26,11 @@ requirements = [
     "jax==0.4.21",
     "polyscope==2.2.1",
     "libigl==2.4.1",
-    "compas_eve==0.3.4",
+    "compas_eve",
     "termcolor",
-    "jaxlib==0.4.21"
+    "jaxlib==0.4.21",
+    "distance3d",
+    "open3d"
 ]
 
 ext_modules = []

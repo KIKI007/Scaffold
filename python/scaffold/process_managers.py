@@ -13,6 +13,7 @@ import multiprocessing as mp
 from multiprocessing import Process, Queue
 import time
 import os
+from scaffold import SERVER_NAME
 
 def update_viewer_stick_model(msg):
     global viewer
@@ -65,7 +66,7 @@ def gui_process(queue):
         elif data["file_type"] == "current":
             viewer.load_from_file(data["file"])
 
-        tx = MqttTransport("localhost")
+        tx = MqttTransport(SERVER_NAME)
 
         topic = Topic("/scaffold/stick_model/", Message)
         subscriber_stick = Subscriber(topic, callback=update_viewer_stick_model, transport=tx)
@@ -79,7 +80,7 @@ def gui_process(queue):
 
 def computation_process():
 
-    tx = MqttTransport("localhost")
+    tx = MqttTransport(SERVER_NAME)
     topic = Topic("/opt/problem_request/", Message)
     subscriber_stick = Subscriber(topic, callback=update_optimization, transport=tx)
     subscriber_stick.subscribe()
