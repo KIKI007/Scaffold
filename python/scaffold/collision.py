@@ -86,7 +86,6 @@ class CollisionSolver(ScaffoldModel):
                 dist, point1, point2, _ = gjk(collider1, collider2)
                 if dist < 1E-6:
                     _, depth, _, _ = mpr_penetration(collider1, collider2)
-                    print(frame1, frame2, depth)
                     if depth == None or depth < collision_margin:
                         continue
 
