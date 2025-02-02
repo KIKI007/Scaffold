@@ -422,10 +422,10 @@ class SMILP_optimizer:
         while tr_size > contactopt_trust_region_size_lobnd and tr_size < contactopt_trust_region_size_upbnd:
             num_it = num_it + 1
             result = run_beamopt(E, V, FE, vs, xs, tr_size, self.opt_parameters)
-            if result != None:
-
+            log = result[-1]
+            logs.append(log)
+            if log["status"]:
                 [vs, xs, curr_radius, curr_collision_dist, contact_pairs, log] = result
-                logs.append(log)
 
                 cprint("it = {}, tr_size = {:.2e}, radius = {:.2e}, clamp_dist = {:.2e}".format(num_it, tr_size,
                                                                                                 curr_radius,

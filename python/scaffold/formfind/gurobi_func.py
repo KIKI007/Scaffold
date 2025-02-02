@@ -412,8 +412,17 @@ def run_beamopt(E, V, FE, vs, xs, tr_size, parameters):
     m.Params.TimeLimit = parameters["time_out"]
     m.optimize()
 
+    log = {
+        "discrete_vars":m.NumBinVars,
+        "continuous_vars":m.NumVars - m.NumBinVars,
+        "num_constraints":m.NumConstrs,
+        "runtime": m.Runtime,
+        "tr_size": tr_size,
+        "status": m.SolCount != 0
+    }
+
     if m.SolCount == 0:
-        return None
+        return [log]
 
     new_vs = []
     new_xs = []
@@ -433,12 +442,5 @@ def run_beamopt(E, V, FE, vs, xs, tr_size, parameters):
         edgeJ_coord = contact_pairs[id]["edgeJ_coord"]
         if contact_var.X == 1:
             new_contact_pairs.append([edgeI_coord, edgeJ_coord])
-
-    log = {
-        "discrete_vars":m.NumBinVars,
-        "continuous_vars":m.NumVars - m.NumBinVars,
-        "num_constraints":m.NumConstrs,
-        "runtime": m.Runtime
-    }
 
     return [new_vs, new_xs, radius.X, collision_dist.X, new_contact_pairs, log]
