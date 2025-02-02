@@ -16,7 +16,11 @@ class StickModelInput:
             self.fromJSON(json_data)
 
     def saveFile(self):
-        file_path = os.path.join(DATA_DIR, self.stick_model.file_name)
+        if self.stick_model.file_name.endswith('.json'):
+            file_path = os.path.join(DATA_DIR, self.stick_model.file_name)
+        else:
+            file_path = os.path.join(DATA_DIR, self.stick_model.file_name + ".json")
+
         print("Save file {} to the folder {}".format(self.stick_model.file_name, DATA_DIR))
         with open(file_path, "w") as file:
             json.dump(self.toJSON(), file)
