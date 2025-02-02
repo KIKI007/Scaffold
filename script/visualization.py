@@ -6,16 +6,12 @@ import argparse
 if __name__ == "__main__":
     queue = Queue()
 
-    p2 = Process(target=computation_process)
-    p1 = Process(target=scaffold_visualization, args=(queue,))
-
+    file_path = "box3x3_layer_0.json"
+    p1 = Process(target=scaffold_visualization, args=(file_path,))
     p1.start()
 
-    file_path = None
-
+    p2 = Process(target=computation_process)
     p2.start()
-    queue.put(file_path)
-    p1.join()
 
-    if p2.is_alive():
-        p2.join()
+    p1.join()
+    p2.join()
