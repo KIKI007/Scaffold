@@ -276,7 +276,7 @@ def create_clamp_collision_distance_constraints(m, vs, xs, V, E, Dx_vars, Dv_var
                 contact_var_j = coupler_contact_vars[eit][jd]
                 contact_var_i = coupler_contact_vars[eit][id]
 
-                if abs(coupler_ts0_i - coupler_ts0_j) <= parameters["clamp_collision_dist"]:
+                if abs(coupler_ts0_i - coupler_ts0_j) <= parameters["clamp_t_bnd"] * 2:
                     sign_var = m.addVar(vtype = GRB.BINARY)
                     m.addConstr(coupler_ts_j - coupler_ts_i >= collision_dist - M * (1 - contact_var_j) - M * (1 - contact_var_i) - M * sign_var)
                     m.addConstr(coupler_ts_i - coupler_ts_j >= collision_dist - M * (1 - contact_var_j) - M * (1 - contact_var_i) - M * (1 - sign_var))
@@ -434,4 +434,11 @@ def run_beamopt(E, V, FE, vs, xs, tr_size, parameters):
         if contact_var.X == 1:
             new_contact_pairs.append([edgeI_coord, edgeJ_coord])
 
-    return [new_vs, new_xs, radius.X, collision_dist.X, new_contact_pairs]
+    log = {
+        "discrete_vars":m.NumBinVars,
+        "continuous_vars":m.NumVars - m.NumBinVars,
+        "num_constraints":m.NumConstrs,
+        "runtime": m.Runtime
+    }
+
+    return [new_vs, new_xs, radius.X, collision_dist.X, new_contact_pairs, log]

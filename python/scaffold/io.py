@@ -15,9 +15,9 @@ class StickModelInput:
             json_data = json.load(file)
             self.fromJSON(json_data)
 
-    def saveFile(self, file_name="one_tet.json"):
-        file_path = os.path.join(DATA_DIR, file_name)
-        print("Save file {} to the folder {}".format(file_name, DATA_DIR))
+    def saveFile(self):
+        file_path = os.path.join(DATA_DIR, self.stick_model.file_name)
+        print("Save file {} to the folder {}".format(self.stick_model.file_name, DATA_DIR))
         with open(file_path, "w") as file:
             json.dump(self.toJSON(), file)
 
@@ -34,14 +34,14 @@ class StickModelInput:
         self.update_parameters()
         return
 
-
     def update_parameters(self):
-        self.opt_parameters["clamp_t_bnd"] = self.opt_parameters.get(
-            "clamp_t_bnd", 0.1)
+        self.opt_parameters["clamp_t_bnd"] = self.opt_parameters.get("clamp_t_bnd", 0.1)
 
-        self.opt_parameters["pos_devi"] = self.opt_parameters.get("pos_devi", 0.05)
+        self.opt_parameters["pos_devi"] = self.opt_parameters.get("pos_devi", 0.04)
 
-        self.opt_parameters["orient_devi"] = self.opt_parameters.get("orient_devi", 0.0574532925)
+        self.opt_parameters["clamp_gap"] = self.opt_parameters.get("clamp_gap", 0.016)
+
+        self.opt_parameters["orient_devi"] = self.opt_parameters.get("orient_devi", 0.0874532925)
 
         self.opt_parameters["time_out"] = self.opt_parameters.get("time_out", 300)
 

@@ -1,3 +1,4 @@
+import copy
 import os
 import json
 import numpy as np
@@ -16,7 +17,8 @@ from compas_eve.mqtt import MqttTransport
 import time
 import multiprocessing as mp
 from multiprocessing import Process
-from scaffold import SERVER_NAME
+from scaffold import LOCAL_SERVER_NAME, REMOTE_SERVER_NAME
+
 
 class SMILP_optimizer:
 
@@ -83,7 +85,7 @@ class SMILP_optimizer:
         self.fixed_edges_coord = self.from_edge_ind_to_coord(self.fixed_edges_ind)
         del self.fixed_edges_ind
 
-        print( self.fixed_edges_coord )
+        print(self.fixed_edges_coord)
 
         # layers' index
         self.layers_ind = self.opt_parameters.get('layers', [list(range(len(self.line_edges_coord)))])
@@ -143,10 +145,11 @@ class SMILP_optimizer:
             "debug_mode": self.debug_mode
         })
 
-        self.opt_parameters["num_unsuccessful_step_to_expand_trust_region"] = self.opt_parameters.get("num_unsuccessful_step_to_expand_trust_region", 10)
+        self.opt_parameters["num_unsuccessful_step_to_expand_trust_region"] = self.opt_parameters.get(
+            "num_unsuccessful_step_to_expand_trust_region", 10)
         self.opt_parameters["clamp_t_bnd"] = self.opt_parameters.get("clamp_t_bnd", 0.1)
-        self.opt_parameters["pos_devi"] = self.opt_parameters.get("pos_devi", 0.05)
-        self.opt_parameters["orient_devi"] = self.opt_parameters.get("orient_devi", 0.0574532925)
+        self.opt_parameters["pos_devi"] = self.opt_parameters.get("pos_devi", 0.04)
+        self.opt_parameters["orient_devi"] = self.opt_parameters.get("orient_devi", 0.0874532925)
         self.opt_parameters["time_out"] = self.opt_parameters.get("time_out", 300)
         self.opt_parameters["bar_collision_distance"] = self.opt_parameters.get("bar_collision_distance", 0.02)
         self.opt_parameters["clamp_collision_dist"] = self.opt_parameters.get("clamp_collision_dist", 0.024)
@@ -159,7 +162,7 @@ class SMILP_optimizer:
     def send_result_message(self, queue):
         data = queue.get()
         topic = Topic("/opt/scaffold_model/", Message)
-        tx = MqttTransport(host=SERVER_NAME)
+        tx = MqttTransport(host=LOCAL_SERVER_NAME)
         publisher = Publisher(topic, transport=tx)
         msg = Message(data)
         publisher.publish(msg)
@@ -224,7 +227,7 @@ class SMILP_optimizer:
                     opt_data["edges_coord"] = json_data.get("opt_edges_coord",
                                                             self.collect_layer_edge_coords(self.layer_start))
 
-                    model = compute_scaffold_model(self.center_before_update, opt_data, self.opt_parameters, False)
+                    model = post_processing(self.center_before_update, opt_data, self.opt_parameters, False)
                     self.send_result("loading", "loading", model)
 
                     model = ScaffoldModel()
@@ -255,11 +258,11 @@ class SMILP_optimizer:
              self.fixed_edges_coord,
              self.layers_coord,
              self.normals] = remove_vertex_duplication(self.line_vertices_coord,
-                                                                   self.line_edges_coord,
-                                                                   self.fixed_edges_coord,
-                                                                   self.layers_coord,
-                                                                   self.opt_parameters,
-                                                                   self.normals)
+                                                       self.line_edges_coord,
+                                                       self.fixed_edges_coord,
+                                                       self.layers_coord,
+                                                       self.opt_parameters,
+                                                       self.normals)
         else:
             [self.line_vertices_coord,
              self.line_edges_coord,
@@ -271,7 +274,9 @@ class SMILP_optimizer:
                                                             self.opt_parameters)
 
         if self.opt_parameters["reciprocal"] and self.stick_model.has_normals():
-            self.opt_parameters["fixed_contact_pairs_coord"], self.opt_parameters["fixed_contact_pairs_normals"] = compute_reciprocal_contact_pairs(self.line_vertices_coord, self.line_edges_coord, self.normals)
+            self.opt_parameters["fixed_contact_pairs_coord"], self.opt_parameters[
+                "fixed_contact_pairs_normals"] = compute_reciprocal_contact_pairs(self.line_vertices_coord,
+                                                                                  self.line_edges_coord, self.normals)
 
     def check_geometry_match_barlengths(self):
         # * check if any bar is too long
@@ -284,6 +289,38 @@ class SMILP_optimizer:
                     "Line #{} has length {:.3f}, exceeding maximum available length {}. Please scale down your design.".format(
                         i, length, max_available_length))
 
+    def save_logs(self, logs):
+        # save log
+        data = {"summary": {
+            "continuous_vars": 0,
+            "discrete_vars": 0,
+            "num_constraints": 0,
+            "runtime": 0,
+            "iterations": 0,
+        },
+            "original": logs
+        }
+
+        for log in logs:
+            data["summary"]["iterations"] += 1
+            data["summary"]["continuous_vars"] += log["continuous_vars"]
+            data["summary"]["num_constraints"] += log["num_constraints"]
+            data["summary"]["discrete_vars"] += log["discrete_vars"]
+            data["summary"]["runtime"] += log["runtime"]
+
+        if data["summary"]["iterations"] > 0:
+            data["summary"]["continuous_vars"] /= data["summary"]["iterations"]
+            data["summary"]["discrete_vars"] /= data["summary"]["iterations"]
+            data["summary"]["num_constraints"] /= data["summary"]["iterations"]
+
+        problem_name = self.file_name
+        if problem_name.endswith('.json'):
+            problem_name = problem_name[:-5]
+        log_path = os.path.join(MT_DIR, problem_name + '_log.json')
+        with open(log_path, "w") as file:
+            print("log save to {}".format(log_path))
+            json.dump(data, file)
+
     def solve(self):
 
         self.models = []
@@ -294,6 +331,8 @@ class SMILP_optimizer:
         curr_fixed_edges_coord = self.fixed_edges_coord.copy()
 
         opt_data = self.prev_opt_data.copy()
+
+        logs = []
 
         for curr_layer_id, curr_layer in enumerate(self.layers_coord):
             if curr_layer_id > self.layer_end:
@@ -310,11 +349,12 @@ class SMILP_optimizer:
                 continue
 
             # run optimization
-            opt_data = self.run_opt(curr_edges_coord,
-                                    self.line_vertices_coord,
-                                    curr_fixed_edges_coord,
-                                    xs=opt_data["xs"],
-                                    vs=opt_data["vs"])
+            opt_data, _logs = self.run_opt(curr_edges_coord,
+                                           self.line_vertices_coord,
+                                           curr_fixed_edges_coord,
+                                           xs=opt_data["xs"],
+                                           vs=opt_data["vs"])
+            logs.extend(_logs)
 
             if opt_data["nstatus"] != 0:
                 cprint('No solution found!', 'red')
@@ -337,12 +377,12 @@ class SMILP_optimizer:
 
             running_message = "running (layer_id {})".format(curr_layer_id)
 
-            model = compute_scaffold_model(self.center_before_update,
-                                           opt_data,
-                                           self.opt_parameters,
-                                           True,
-                                           {"name": self.file_name, "complete": curr_layer_id + 1 == self.layer_end,
-                                            "id": curr_layer_id})
+            model = post_processing(self.center_before_update,
+                                    opt_data,
+                                    self.opt_parameters,
+                                    True,
+                                    {"name": self.file_name, "complete": curr_layer_id + 1 == self.layer_end,
+                                     "id": curr_layer_id})
 
             self.send_result("running", running_message, model)
 
@@ -351,10 +391,12 @@ class SMILP_optimizer:
             self.send_result("failed", "no solution")
             return False
 
+        self.save_logs(logs)
+
         self.send_result("succeed", "find solution", model)
         return True
 
-    def run_opt(self, E, V, FE, vs=None, xs=None):
+    def run_opt(self, E, V, FE, vs=None, xs=None, send_intermediate_result=False):
 
         # load parameters
         contactopt_trust_region_size_start = self.opt_parameters["contactopt_trust_region_start"]
@@ -375,29 +417,35 @@ class SMILP_optimizer:
         # prev_collision_dist = 0
         tr_size = contactopt_trust_region_size_start
         num_same_tr_it = 0
+
+        logs = []
         while tr_size > contactopt_trust_region_size_lobnd and tr_size < contactopt_trust_region_size_upbnd:
             num_it = num_it + 1
             result = run_beamopt(E, V, FE, vs, xs, tr_size, self.opt_parameters)
             if result != None:
-                [vs, xs, curr_radius, curr_collision_dist, contact_pairs] = result
+
+                [vs, xs, curr_radius, curr_collision_dist, contact_pairs, log] = result
+                logs.append(log)
 
                 cprint("it = {}, tr_size = {:.2e}, radius = {:.2e}, clamp_dist = {:.2e}".format(num_it, tr_size,
                                                                                                 curr_radius,
                                                                                                 curr_collision_dist),
                        'cyan')
 
-                opt_data = {"vs": vs, "xs": xs,
-                            "contact_pairs_coord": contact_pairs,
-                            "nstatus": -1,
-                            "bar_radius": self.bar_radius,
-                            "edges_coord": E,
-                            "fixed_edges_coord": self.fixed_edges_coord,
-                            "vertices_coord": self.line_vertices_coord.copy()}
+                if send_intermediate_result:
+                    opt_data = {"vs": vs, "xs": xs,
+                                "contact_pairs_coord": contact_pairs,
+                                "nstatus": -1,
+                                "bar_radius": self.bar_radius,
+                                "edges_coord": E,
+                                "fixed_edges_coord": self.fixed_edges_coord,
+                                "vertices_coord": self.line_vertices_coord.copy()}
 
-                model = compute_scaffold_model(self.center_before_update, opt_data, self.opt_parameters, False)
+                    model = post_processing(self.center_before_update, opt_data, self.opt_parameters, False)
 
-                self.send_result("opt", "(it={}, tr_size={:.2e}, radius={:.2e})".format(num_it, tr_size, curr_radius),
-                                 model)
+                    self.send_result("opt",
+                                     "(it={}, tr_size={:.2e}, radius={:.2e})".format(num_it, tr_size, curr_radius),
+                                     model)
 
                 if curr_radius >= (1 - optimality_tol) * bar_distance \
                         and curr_collision_dist >= (1 - optimality_tol) * clamp_distance:
@@ -423,4 +471,4 @@ class SMILP_optimizer:
 
         # save optimization
         opt_data = {"vs": vs, "xs": xs, "contact_pairs_coord": contact_pairs, "nstatus": nstatus}
-        return opt_data
+        return opt_data, logs

@@ -13,7 +13,7 @@ import multiprocessing as mp
 from multiprocessing import Process, Queue
 import time
 import os
-from scaffold import SERVER_NAME
+from scaffold import REMOTE_SERVER_NAME, LOCAL_SERVER_NAME
 
 def update_viewer_stick_model(msg):
     global viewer
@@ -64,22 +64,25 @@ def stick_optimization(file_path):
     if file_path is None or file_path == "":
         file_path = "one_tet.json"
     viewer.load_from_file(file_path)
-    tx = MqttTransport(SERVER_NAME)
+
+    remote_tx = MqttTransport(REMOTE_SERVER_NAME)
+    local_tx = MqttTransport(LOCAL_SERVER_NAME)
 
     topic = Topic("/scaffold/stick_model/", Message)
-    subscriber_stick = Subscriber(topic, callback=update_viewer_stick_model, transport=tx)
+    subscriber_stick = Subscriber(topic, callback=update_viewer_stick_model, transport=remote_tx)
     subscriber_stick.subscribe()
 
     topic = Topic("/opt/scaffold_model/", Message)
-    subscriber_scaffold = Subscriber(topic, callback=update_viewer_scaffold_models, transport=tx)
+    subscriber_scaffold = Subscriber(topic, callback=update_viewer_scaffold_models, transport=local_tx)
     subscriber_scaffold.subscribe()
     viewer.show()
 
 def computation_process():
 
-    tx = MqttTransport(SERVER_NAME)
+    local_tx = MqttTransport(LOCAL_SERVER_NAME)
     topic = Topic("/opt/problem_request/", Message)
-    subscriber_stick = Subscriber(topic, callback=update_optimization, transport=tx)
+
+    subscriber_stick = Subscriber(topic, callback=update_optimization, transport=local_tx)
     subscriber_stick.subscribe()
 
     print("Optimization waiting for messages, press CTRL+C to cancel")

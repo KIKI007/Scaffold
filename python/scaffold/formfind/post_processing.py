@@ -8,9 +8,9 @@ from scaffold.geometry import ScaffoldModel
 from scaffold import MT_DIR
 import os
 
-def compute_scaffold_model(ct, opt_data, opt_parameters, save=False, format=None):
+def post_processing(ct, opt_data, opt_parameters, save=False, format=None):
     # * save layer result
-    [resultV, resultCouplerV] = post_processing(opt_data, opt_parameters)
+    [resultV, resultCouplerV] = _post_processing(opt_data, opt_parameters)
 
     for v in resultV:
         v += ct
@@ -67,7 +67,7 @@ def compute_scaffold_model(ct, opt_data, opt_parameters, save=False, format=None
 
     return model
 
-def post_processing(opt_data, parameters):
+def _post_processing(opt_data, parameters):
     """
     :param opt_data: a set contains
            "xs", the optimal positions of the infinite length bars
