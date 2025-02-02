@@ -44,38 +44,35 @@ def update_optimization(msg):
     optimizer.input_model(input)
     optimizer.solve()
 
-def gui_process(queue):
+def scaffold_visualization(file_path):
     global viewer
-    data = queue.get()
+    viewer = ScaffoldViewer()
+    model = ScaffoldModel()
+    if file_path is None or file_path == "":
+        file_path = "one_tet_layer_0.json"
+    path = os.path.join(MT_DIR, file_path)
+    with open(path) as file:
+        json_assembly = json.load(file)
+        model.fromJSON(json_assembly)
+        model.load_default_collision_coupler()
+        viewer.add_scaffold_model(model)
+    viewer.show()
 
-    # visualization
-    if data["file_type"] == "visualization":
-        viewer = ScaffoldViewer()
-        model = ScaffoldModel()
-        path = os.path.join(MT_DIR, data["file"])
-        with open(path) as file:
-            json_assembly = json.load(file)
-            model.fromJSON(json_assembly)
-            model.load_default_collision_coupler()
-            viewer.add_scaffold_model(model)
-    else:
-        # optimization
-        viewer = ScaffoldOptimizerViewer()
-        if data["file_type"] == "legacy":
-            viewer.load_from_file_legacy(data["file"])
-        elif data["file_type"] == "current":
-            viewer.load_from_file(data["file"])
+def stick_optimization(file_path):
+    global viewer
+    viewer = ScaffoldOptimizerViewer()
+    if file_path is None or file_path == "":
+        file_path = "one_tet.json"
+    viewer.load_from_file(file_path)
+    tx = MqttTransport(SERVER_NAME)
 
-        tx = MqttTransport(SERVER_NAME)
+    topic = Topic("/scaffold/stick_model/", Message)
+    subscriber_stick = Subscriber(topic, callback=update_viewer_stick_model, transport=tx)
+    subscriber_stick.subscribe()
 
-        topic = Topic("/scaffold/stick_model/", Message)
-        subscriber_stick = Subscriber(topic, callback=update_viewer_stick_model, transport=tx)
-        subscriber_stick.subscribe()
-
-        topic = Topic("/opt/scaffold_model/", Message)
-        subscriber_scaffold = Subscriber(topic, callback=update_viewer_scaffold_models, transport=tx)
-        subscriber_scaffold.subscribe()
-
+    topic = Topic("/opt/scaffold_model/", Message)
+    subscriber_scaffold = Subscriber(topic, callback=update_viewer_scaffold_models, transport=tx)
+    subscriber_scaffold.subscribe()
     viewer.show()
 
 def computation_process():

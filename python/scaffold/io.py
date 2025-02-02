@@ -15,7 +15,7 @@ class StickModelInput:
             json_data = json.load(file)
             self.fromJSON(json_data)
 
-    def saveFile(self, file_name="tmp.json"):
+    def saveFile(self, file_name="one_tet.json"):
         file_path = os.path.join(DATA_DIR, file_name)
         print("Save file {} to the folder {}".format(file_name, DATA_DIR))
         with open(file_path, "w") as file:
@@ -53,28 +53,6 @@ class StickModelInput:
                                                                                        0.1)
         self.opt_parameters["bar_available_lengths"] = self.opt_parameters.get("bar_available_lengths", [1.0, 2.0])
 
-    def load_from_file_legacy(self, name):
-        file_path = os.path.join(DATA_DIR, name)
-        self.stick_model.lineV = []
-        self.stick_model.lineE = []
-        with open(file_path) as file:
-            json_data = json.load(file)
-            for point in json_data["nodes"]:
-                point_coord = point["point"]
-                self.stick_model.lineV.append(point_coord)
-            self.stick_model.lineV = np.array(self.stick_model.lineV)
-
-            for element in json_data["elements"]:
-                self.stick_model.lineE.append(element["end_node_inds"])
-            self.stick_model.lineE = np.array(self.stick_model.lineE)
-
-            self.stick_model.file_name = name
-            self.stick_model.radius = json_data.get('bar_radius', 0.01)
-            self.opt_parameters = json_data.get('mt_config', {})
-            if "normal_type" in self.opt_parameters\
-                    and self.opt_parameters["normal_type"] == "Sphere":
-                self.stick_model.computeSphereNormals()
-                print(self.stick_model.normals)
 
 class ScaffoldModelOutput:
 
@@ -102,8 +80,3 @@ class ScaffoldModelOutput:
         self.opt_parameters = json_data["opt_parameters"]
         self.status = json_data["status"]
         self.print_message = json_data["print_message"]
-
-    def toJsonLegacy(self):
-        data = {}
-        if self.scaffold_model.is_valid():
-            data = self.scaffold_model.toJSONLegacy()

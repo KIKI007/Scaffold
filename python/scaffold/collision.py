@@ -52,7 +52,7 @@ class CollisionSolver(ScaffoldModel):
                     for mesh_id in range(len(self.coupler_colliders)):
                         A2B = self.coupler_mat4(coupler_id, side_id)
                         [mv, mf] = self.coupler_colliders[mesh_id]
-                        collider = MeshGraph(np.eye(4), mv, mf)
+                        collider = MeshGraph(np.eye(4), np.array(mv), mf)
                         collider.make_artist()
 
                         tm.add_transform(collider_id, "base", A2B)

@@ -1,9 +1,0 @@
-Wed Nov 22 15:06:07 2023
-WARNING: mju_openResource: unknown file '../../data/test/test.xml'
-
-Wed Nov 22 15:08:23 2023
-WARNING: mju_openResource: unknown file 'script/filename.xml'
-
-Wed Nov 22 15:10:27 2023
-WARNING: mju_openResource: unknown file 'script/filename.xml'
-

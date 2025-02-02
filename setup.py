@@ -22,14 +22,15 @@ about = {}
 exec(read('python', 'scaffold', '__version__.py'), about)
 
 requirements = [
-    "gurobipy",
-    "jax==0.4.21",
+    "numpy==2.1.0",
+    "gurobipy==12.0.1",
+    "jax==0.5.0",
     "polyscope==2.2.1",
-    "trimesh",
-    "compas_eve",
-    "termcolor",
-    "jaxlib==0.4.21",
-    "distance3d",
+    "trimesh==4.6.1",
+    "compas_eve==1.0.0",
+    "termcolor==2.5.0",
+    "jaxlib==0.5.0",
+    "distance3d==0.9.0",
 ]
 
 ext_modules = []

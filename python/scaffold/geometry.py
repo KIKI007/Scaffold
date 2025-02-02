@@ -4,6 +4,7 @@ import xml.etree.cElementTree as ET
 import json
 from scaffold import DATA_DIR
 import os
+import numba
 import trimesh
 
 class StickModel:
@@ -136,14 +137,6 @@ class ScaffoldModel:
                 half_couplers.append(half_couplers_data)
         return half_couplers
 
-    def toJSONLegacy(self):
-        data = {
-            "line_pt_pairs": self.lines.tolist(),
-            "half_couplers": self.halfCouplersJson()
-        }
-
-        return data
-
     def fromJSON(self, json_data):
         self.name = "scaffold"
         self.lines = np.array(json_data["line"])
@@ -221,11 +214,11 @@ class ScaffoldModel:
 
     def load_default_coupler(self):
         mesh = trimesh.load_mesh(COUPLER_OBJ_PATH)
-        self.coupler_geometry = {"V" : np.array(mesh.vertices), "F" : np.array(mesh.faces)}
+        self.coupler_geometry = {"V" : np.array(mesh.vertices), "F" : np.array(mesh.faces, dtype=np.int32)}
 
     def load_default_coupler_coarse(self):
         mesh = trimesh.load_mesh(COUPLER_COARSE_OBJ_PATH)
-        self.coupler_geometry = {"V" : np.array(mesh.vertices), "F" : np.array(mesh.faces)}
+        self.coupler_geometry = {"V" : np.array(mesh.vertices), "F" : np.array(mesh.faces, dtype=np.int32)}
 
     def load_default_collision_coupler(self):
         self.coupler_colliders = []
@@ -233,66 +226,5 @@ class ScaffoldModel:
         if abs(self.radius - 0.01) < 1E-6:
             for path in COUPLER_COLLI_OBJ_PATHs:
                 mesh = trimesh.load_mesh(path)
-                self.coupler_colliders.append([np.array(mesh.vertices), np.array(mesh.faces)])
-
-    ##################
-    ### for mujoco ###
-    ##################
-
-    def write_xml_asset(self, root):
-        asset = ET.SubElement(root, "asset")
-        id = 0
-        for path in COUPLER_COLLI_OBJ_PATHs:
-            name_str = "coupler{}".format(id)
-            self.coupler_collider_names.append(name_str)
-            ET.SubElement(asset, "mesh", name=name_str, file=path)
-            id = id + 1
-
-    def write_xml_beam(self, doc):
-        for id in range(len(self.lines)):
-            psta = np.array(self.lines[id][0]) - self.center
-            pend = np.array(self.lines[id][1]) - self.center
-            fromto_str = "{} {} {} {} {} {}".format(*psta, *pend)
-            body = ET.SubElement(doc, "body")
-            beam_name_str = "beam{}".format(id)
-            ET.SubElement(body, "geom", name=beam_name_str, type="cylinder", size=str(self.radius), rgba="0.3 .3 0.9 1",
-                          fromto=fromto_str)
-            self.body_cylinder_names.append(beam_name_str)
-
-    def write_xml_couplers(self, doc):
-        coupler_id = 0
-        for id in range(len(self.adj)):
-            for jd in range(0, 2):
-                mat, vec = self.coupler_transformation_matrix(id, jd)
-                vec = vec - self.center
-                xyaxes_str = "{} {} {} {} {} {}".format(mat[0][0], mat[0][1], mat[0][2], mat[1][0], mat[1][1],
-                                                        mat[1][2])
-                pos_str = "{} {} {}".format(vec[0], vec[1], vec[2])
-                body = ET.SubElement(doc, "body")
-                for mesh_name in self.coupler_collider_names:
-                    coupler_name = "coupler{}".format(coupler_id)
-                    coupler_id = coupler_id + 1
-                    ET.SubElement(body, "geom", name=coupler_name, type="mesh", mesh=mesh_name, xyaxes=xyaxes_str,
-                                  pos=pos_str, rgba="1 1 0.1 1")
-                    self.body_coupler_names.append(coupler_name)
-
-    def write_xml_pair(self, root):
-        contact = ET.SubElement(root, "contact")
-        for coupler_name in self.body_cylinder_names:
-            for cylinder_name in self.body_cylinder_names:
-                ET.SubElement(contact, "pair", geom1=coupler_name, geom2=cylinder_name)
-
-    def save_to_xml(self):
-        root = ET.Element("mujoco")
-        doc = ET.SubElement(root, "worldbody")
-        ET.SubElement(doc, "light", diffuse=".5 .5 .5", pos="0 0 3", dir="0 0 -1")
-
-        self.write_xml_asset(root)
-        self.write_xml_beam(doc)
-        self.write_xml_couplers(doc)
-        self.write_xml_pair(root)
-
-        tree = ET.ElementTree(root)
-        tree.write("file.xml")
-        return ET.tostring(root, encoding='us-ascii')
+                self.coupler_colliders.append([mesh.vertices.tolist(), mesh.faces.tolist()])
 

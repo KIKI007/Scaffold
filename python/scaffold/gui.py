@@ -174,20 +174,11 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
             {"name": "time_out", "label": "optimization time out (second)", "type": "int_input"}
         ]
 
-        self.interface_system = [
-
-        ]
         ps.set_user_callback(self.interface_opt)
 
         # data
         self.running = False
         self.running_msg = ""
-
-    def load_from_file_legacy(self, name):
-        self.input = StickModelInput()
-        self.input.load_from_file_legacy(name)
-        self.input.update_parameters()
-        self.register_model(self.input.stick_model)
 
     def load_from_file(self, name):
         self.input = StickModelInput()
@@ -204,7 +195,6 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
             self.input.saveFile()
             publisher.publish(msg)
             self.running = True
-            self.refresh = False
             self.running_msg = ""
             time.sleep(1)
 
@@ -222,7 +212,7 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
                 self.send_optimization_command()
 
             psim.SetNextItemOpen(True, psim.ImGuiCond_FirstUseEver)
-            if psim.TreeNode("Parameters (Important)"):
+            if psim.TreeNode("Parameters"):
                 for item in self.interface_important:
                     if item["type"] == "float_input":
                         changed, self.input.opt_parameters[item["name"]] = psim.InputFloat(item["label"],
@@ -243,17 +233,6 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
 
                 psim.TreePop()
 
-            psim.TreePop()
-
-            if psim.TreeNode("Parameters (System)"):
-
-                for item in self.interface_system:
-                    if item["type"] == "float_input":
-                        changed, self.input.opt_parameters[item["name"]] = psim.InputFloat(item["label"],
-                                                                                     self.input.opt_parameters[item["name"]])
-                    elif item["type"] == "float_int":
-                        changed, self.input.opt_parameters[item["name"]] = psim.InputInt(item["label"],
-                                                                                   self.input.opt_parameters[item["name"]])
             psim.TreePop()
 
         self.update_render()
