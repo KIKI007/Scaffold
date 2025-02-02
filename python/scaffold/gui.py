@@ -14,6 +14,7 @@ import time
 import json
 import os
 from scaffold import SERVER_NAME
+
 class ScaffoldViewer:
     def __init__(self):
         ps.init()

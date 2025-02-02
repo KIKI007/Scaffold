@@ -19,7 +19,7 @@ def update_viewer_stick_model(msg):
     global viewer
     if viewer.running == False:
         modelinput = StickModelInput()
-        modelinput.fromJSON(msg)
+        modelinput.fromJSON(msg.data)
         viewer.input = modelinput
         viewer.re_render = True
 
@@ -27,7 +27,7 @@ def update_viewer_scaffold_models(msg):
     global viewer
     if viewer.running == True:
         output = ScaffoldModelOutput()
-        output.fromJson(msg)
+        output.fromJson(msg.data)
         viewer.running_msg = output.print_message
 
         if output.status == "succeed" or output.status == "failed":
@@ -39,7 +39,7 @@ def update_viewer_scaffold_models(msg):
 
 def update_optimization(msg):
     input = StickModelInput()
-    input.fromJSON(msg)
+    input.fromJSON(msg.data)
     optimizer = SMILP_optimizer(input.stick_model.file_name)
     optimizer.input_model(input)
     optimizer.solve()

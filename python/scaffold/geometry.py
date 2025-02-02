@@ -1,10 +1,10 @@
 import numpy as np
-import igl
 from scaffold import COUPLER_OBJ_PATH, COUPLER_COARSE_OBJ_PATH, COUPLER_COLLI_OBJ_PATHs
 import xml.etree.cElementTree as ET
 import json
 from scaffold import DATA_DIR
 import os
+import trimesh
 
 class StickModel:
 
@@ -220,22 +220,20 @@ class ScaffoldModel:
             return [V, self.coupler_geometry["F"]]
 
     def load_default_coupler(self):
-        V, F = igl.read_triangle_mesh(COUPLER_OBJ_PATH)
-        self.coupler_geometry = {"V" : np.array(V), "F" : np.array(F)}
+        mesh = trimesh.load_mesh(COUPLER_OBJ_PATH)
+        self.coupler_geometry = {"V" : np.array(mesh.vertices), "F" : np.array(mesh.faces)}
 
     def load_default_coupler_coarse(self):
-        V, F = igl.read_triangle_mesh(COUPLER_COARSE_OBJ_PATH)
-        self.coupler_geometry = {"V": np.array(V), "F": np.array(F)}
+        mesh = trimesh.load_mesh(COUPLER_COARSE_OBJ_PATH)
+        self.coupler_geometry = {"V" : np.array(mesh.vertices), "F" : np.array(mesh.faces)}
 
     def load_default_collision_coupler(self):
         self.coupler_colliders = []
 
         if abs(self.radius - 0.01) < 1E-6:
             for path in COUPLER_COLLI_OBJ_PATHs:
-                pV, pF = igl.read_triangle_mesh(path)
-                pV = np.array(pV)
-                pF = np.array(pF)
-                self.coupler_colliders.append([pV, pF])
+                mesh = trimesh.load_mesh(path)
+                self.coupler_colliders.append([np.array(mesh.vertices), np.array(mesh.faces)])
 
     ##################
     ### for mujoco ###

@@ -1,5 +1,4 @@
-
 *.pyc
-*.pyc
-*.pyc
-*.pyc
+python\scaffold.egg-info\*
+*.ini
+*.idea

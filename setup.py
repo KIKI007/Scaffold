@@ -25,12 +25,11 @@ requirements = [
     "gurobipy",
     "jax==0.4.21",
     "polyscope==2.2.1",
-    "libigl==2.4.1",
+    "trimesh",
     "compas_eve",
     "termcolor",
     "jaxlib==0.4.21",
     "distance3d",
-    "open3d"
 ]
 
 ext_modules = []
