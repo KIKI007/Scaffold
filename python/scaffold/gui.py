@@ -159,6 +159,7 @@ class ScaffoldViewer:
             if self.user_select_model_id != "None" and self.user_select_model_id in self.model_name_map:
                 self.register_model(self.model_name_map[self.user_select_model_id])
             self.re_render = False
+            ps.reset_camera_to_home_view()
 
 class ScaffoldOptimizerViewer(ScaffoldViewer):
 

@@ -418,11 +418,15 @@ def run_beamopt(E, V, FE, vs, xs, tr_size, parameters):
         "num_constraints":m.NumConstrs,
         "runtime": m.Runtime,
         "tr_size": tr_size,
-        "status": m.SolCount != 0
+        "status": m.SolCount != 0,
+        "radius": 0,
     }
 
     if m.SolCount == 0:
         return [log]
+
+    log.update({"radius": radius.X})
+
 
     new_vs = []
     new_xs = []
