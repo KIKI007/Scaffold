@@ -5,7 +5,8 @@ if __name__ == "__main__":
     queue = Queue()
 
     file_path = "box3x3.json"
-    p1 = Process(target=stick_optimization, args=(file_path, ))
+    listen_server = False
+    p1 = Process(target=stick_optimization, args=(file_path, listen_server))
     p1.start()
 
     p2 = Process(target=computation_process)

@@ -58,20 +58,20 @@ def scaffold_visualization(file_path):
         viewer.add_scaffold_model(model)
     viewer.show()
 
-def stick_optimization(file_path):
+def stick_optimization(file_path, listen_server):
     global viewer
     viewer = ScaffoldOptimizerViewer()
     if file_path is None or file_path == "":
         file_path = "one_tet.json"
     viewer.load_from_file(file_path)
 
-    remote_tx = MqttTransport(REMOTE_SERVER_NAME)
+    if listen_server:
+        remote_tx = MqttTransport(REMOTE_SERVER_NAME)
+        topic = Topic("/scaffold/stick_model/", Message)
+        subscriber_stick = Subscriber(topic, callback=update_viewer_stick_model, transport=remote_tx)
+        subscriber_stick.subscribe()
+
     local_tx = MqttTransport(LOCAL_SERVER_NAME)
-
-    topic = Topic("/scaffold/stick_model/", Message)
-    subscriber_stick = Subscriber(topic, callback=update_viewer_stick_model, transport=remote_tx)
-    subscriber_stick.subscribe()
-
     topic = Topic("/opt/scaffold_model/", Message)
     subscriber_scaffold = Subscriber(topic, callback=update_viewer_scaffold_models, transport=local_tx)
     subscriber_scaffold.subscribe()
