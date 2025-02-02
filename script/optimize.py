@@ -3,9 +3,8 @@ from multiprocessing import Process
 
 if __name__ == "__main__":
     queue = Queue()
-
-    file_path = "box3x3.json"
-    listen_server = False
+    file_path = "bunny.json"
+    listen_server = True
     p1 = Process(target=stick_optimization, args=(file_path, listen_server))
     p1.start()
 
