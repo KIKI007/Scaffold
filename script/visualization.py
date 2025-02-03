@@ -1,12 +1,8 @@
 from scaffold.process_managers import *
-import multiprocessing as mp
-from multiprocessing import Process, Queue
-import argparse
+from multiprocessing import Process
 
 if __name__ == "__main__":
-    queue = Queue()
-
-    file_path = "cshape_layer_0.json"
+    file_path = "bunny_layer_0.json"
     p1 = Process(target=scaffold_visualization, args=(file_path,))
     p1.start()
 

@@ -2,3 +2,5 @@
 python\scaffold.egg-info\*
 *.ini
 *.idea
+*.pyc
+*.DS_Store
