@@ -424,6 +424,7 @@ class SMILP_optimizer:
             result = run_beamopt(E, V, FE, vs, xs, tr_size, self.opt_parameters)
             log = result[-1]
             logs.append(log)
+            self.save_logs(logs)
             if log["status"]:
                 [vs, xs, curr_radius, curr_collision_dist, contact_pairs, log] = result
 
