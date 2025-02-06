@@ -2,3 +2,7 @@
 python\scaffold.egg-info\*
 *.ini
 *.idea
+*.aux
+*.loh
+*.synctex.gz
+*.log

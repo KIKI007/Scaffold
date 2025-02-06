@@ -23,7 +23,8 @@ exec(read('python', 'scaffold', '__version__.py'), about)
 
 requirements = [
     "numpy==2.1.0",
-    "gurobipy==12.0.1",
+    # "gurobipy==12.0.1",
+    "gurobipy==11.0",
     "jax==0.5.0",
     "polyscope==2.2.1",
     "trimesh==4.6.1",

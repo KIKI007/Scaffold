@@ -1,0 +1,49 @@
+
+\documentclass{article}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+
+\geometry{a4paper, margin=1in}
+
+\begin{document}
+
+\title{Optimization Log Summary}
+\author{}
+\date{}
+
+\maketitle
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|l|c|c|c|c|c|}
+\hline
+Model Name & Number of Elements & Valence Avg & Valence Std & Trust Region Iterations & Runtime (s) \\
+\hline
+box4x4 & 0 & 0.00 & 0.00 & 5 & 4001.67 \\
+\hline
+box1x1 & 12 & 2.00 & 0.00 & 25 & 0.30 \\
+\hline
+tower & 24 & 2.00 & 0.00 & 17 & 3.51 \\
+\hline
+bridge & 39 & 2.00 & 0.00 & 23 & 10.65 \\
+\hline
+roboarch & 45 & 2.00 & 0.00 & 17 & 0.53 \\
+\hline
+box2x2 & 54 & 2.00 & 0.00 & 25 & 44.14 \\
+\hline
+frustum & 68 & 2.00 & 0.00 & 18 & 35.06 \\
+\hline
+bunny & 129 & 2.00 & 0.00 & 17 & 86.57 \\
+\hline
+box3x3 & 144 & 2.00 & 0.00 & 31 & 272.09 \\
+\hline
+cshape & 192 & 2.00 & 0.00 & 18 & 1969.90 \\
+\hline
+
+\end{tabular}
+\caption{Optimization Log Summary}
+\label{table:log_summary}
+\end{table}
+
+\end{document}

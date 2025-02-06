@@ -363,8 +363,10 @@ def run_beamopt(E, V, FE, vs, xs, tr_size, parameters):
             m.addConstr(devi_v >= math.cos(parameters["orient_devi"]))
 
     # define variables
+    has_clamp = False
     radius = m.addVar(vtype=GRB.CONTINUOUS)
-    collision_dist = m.addVar(vtype=GRB.CONTINUOUS)
+    if has_clamp:
+        collision_dist = m.addVar(vtype=GRB.CONTINUOUS)
 
     # create contact variables
     contact_pairs = []
@@ -398,15 +400,18 @@ def run_beamopt(E, V, FE, vs, xs, tr_size, parameters):
 
     create_bar_distance_constraints(m, vs, xs, Dx_vars, Dv_vars, radius, contact_pairs, parameters)
     create_bar_connectivity_constraints(m, V, E, Edge_at_Joint, contact_pairs, parameters)
-    create_clamp_collision_distance_constraints(m, vs, xs, V, E, Dx_vars, Dv_vars, collision_dist, contact_pairs, FE, parameters)
+    if has_clamp:
+        create_clamp_collision_distance_constraints(m, vs, xs, V, E, Dx_vars, Dv_vars, collision_dist, contact_pairs, FE, parameters)
 
     # optimization
-    clamp_collision_dist = parameters["clamp_collision_dist"]
     bar_contact_distance = parameters["bar_contact_distance"]
-
-    m.addConstr(collision_dist / clamp_collision_dist == radius / bar_contact_distance)
     m.addConstr(radius <= bar_contact_distance)
-    m.addConstr(collision_dist <= clamp_collision_dist)
+
+    if has_clamp:
+        clamp_collision_dist = parameters["clamp_collision_dist"]
+        m.addConstr(collision_dist / clamp_collision_dist == radius / bar_contact_distance)
+        m.addConstr(collision_dist <= clamp_collision_dist)
+
     m.setObjective(radius, GRB.MAXIMIZE)
     m.Params.OutputFlag = parameters["debug_mode"]
     m.Params.TimeLimit = parameters["time_out"]
@@ -446,5 +451,7 @@ def run_beamopt(E, V, FE, vs, xs, tr_size, parameters):
         edgeJ_coord = contact_pairs[id]["edgeJ_coord"]
         if contact_var.X == 1:
             new_contact_pairs.append([edgeI_coord, edgeJ_coord])
+    
+    collision_dist_val = collision_dist.X if has_clamp else 1e3
 
-    return [new_vs, new_xs, radius.X, collision_dist.X, new_contact_pairs, log]
+    return [new_vs, new_xs, radius.X, collision_dist_val, new_contact_pairs, log]
