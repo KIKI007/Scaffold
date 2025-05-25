@@ -37,7 +37,7 @@ To run test example,
 5. Select boundary curves
 6. Wait until optimization finished
 
-![image](https://github.com/KIKI007/Scaffold/tree/main/rhino/example.gif)
+![image](https://github.com/KIKI007/Scaffold/blob/main/rhino/example.gif)
 
 ## Hardware
 
