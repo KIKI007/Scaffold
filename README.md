@@ -31,9 +31,11 @@ Replace USERNAME to your local folder name. If such a folder does not exists, pl
 
 To run test example,
 1. Ensure mosquitto server is activated.
-2. Start a scaffold ui interface `python3 .\script\optimize.py`.
+2. Start a scaffold python instance `python3 .\script\optimize.py`.
 3. Open the rhino file `rhino\test_example.3dm`
 4. Run the script `rhino\run_script.py` using rhino script editor.
+
+The scaffold python instance will receive data sending from rhino.
 
 ## Hardware
 
