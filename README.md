@@ -1,5 +1,4 @@
-# Computational design and fabrication of reusable
-multi-tangent bar structures.
+# Computational design and fabrication of reusable multi-tangent bar structures.
 ![image](https://github.com/KIKI007/Scaffold/blob/main/rhino/teaser.png)
 
 ## Installations
