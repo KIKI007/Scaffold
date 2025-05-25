@@ -30,12 +30,14 @@ C:\Users\USERNAME\.rhinocode\py39-rh8\python.exe -m pip install -e .
 Replace USERNAME to your local folder name. If such a folder does not exists, please run `_ScriptEditor` command in rhino 8 to initialize the rhino-python environment.
 
 To run test example,
-1. Ensure mosquitto server is activated.
-2. Start a scaffold python instance `python3 .\script\optimize.py`.
-3. Open the rhino file `rhino\test_example.3dm`
-4. Run the script `rhino\run_script.py` using rhino script editor.
+1. Open the rhino file `rhino\test_example.3dm`
+2. Run the script `rhino\run_script.py` using rhino script editor.
+3. Confirm the parameters list
+4. Select input curves
+5. Select boundary curves
+6. Wait until optimization finished
 
-The scaffold python instance will receive data sending from rhino.
+![image](https://github.com/KIKI007/Scaffold/tree/main/rhino/example.gif)
 
 ## Hardware
 

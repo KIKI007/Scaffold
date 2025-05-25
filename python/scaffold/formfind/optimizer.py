@@ -390,12 +390,13 @@ class SMILP_optimizer:
 
         if opt_data["nstatus"] != 0:
             cprint('No solution found!', 'red')
+            self.result_model = None
             self.send_result("failed", "no solution")
             return False
 
         self.save_logs(logs)
-
         self.send_result("succeed", "find solution", model)
+        self.result_model = model
         return True
 
     def run_opt(self, E, V, FE, vs=None, xs=None, send_intermediate_result=False):
