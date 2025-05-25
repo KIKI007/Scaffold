@@ -32,6 +32,7 @@ class SMILP_optimizer:
 
     def __init__(self, name):
         self.file_name = name
+        self.send_message_flag = True
         pass
 
     def from_edge_ind_to_coord(self, sub_inds):
@@ -169,20 +170,21 @@ class SMILP_optimizer:
         time.sleep(1)
 
     def send_result(self, status="", print_message="", model=None):
-        output = ScaffoldModelOutput()
-        if model is not None:
-            output.scaffold_model = model
-        output.opt_parameters = self.opt_parameters
-        output.status = status
-        output.print_message = print_message
+        if self.send_message_flag:
+            output = ScaffoldModelOutput()
+            if model is not None:
+                output.scaffold_model = model
+            output.opt_parameters = self.opt_parameters
+            output.status = status
+            output.print_message = print_message
 
-        data = output.toJson()
+            data = output.toJson()
 
-        queue = mp.Queue()
-        p = Process(target=self.send_result_message, args=(queue,))
-        p.start()
-        queue.put(data)
-        p.join()
+            queue = mp.Queue()
+            p = Process(target=self.send_result_message, args=(queue,))
+            p.start()
+            queue.put(data)
+            p.join()
 
     def parse_prev_computed_result(self):
         self.models = []

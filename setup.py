@@ -22,14 +22,14 @@ about = {}
 exec(read('python', 'scaffold', '__version__.py'), about)
 
 requirements = [
-    "numpy==2.1.0",
+    "numpy",
     "gurobipy==12.0.1",
-    "jax==0.5.0",
+    "jax==0.4.30",
     "polyscope==2.2.1",
     "trimesh==4.6.1",
     "compas_eve==1.0.0",
     "termcolor==2.5.0",
-    "jaxlib==0.5.0",
+    "jaxlib==0.4.30",
     "distance3d==0.9.0",
 ]
 

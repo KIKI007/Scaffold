@@ -66,7 +66,7 @@ def stick_optimization(file_path, listen_server):
     viewer.load_from_file(file_path)
 
     if listen_server:
-        remote_tx = MqttTransport(REMOTE_SERVER_NAME)
+        remote_tx = MqttTransport(LOCAL_SERVER_NAME)
         topic = Topic("/scaffold/stick_model/", Message)
         subscriber_stick = Subscriber(topic, callback=update_viewer_stick_model, transport=remote_tx)
         subscriber_stick.subscribe()
