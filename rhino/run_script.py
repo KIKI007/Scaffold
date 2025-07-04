@@ -115,21 +115,20 @@ else:
     parameters = rs.MultiListBox(json_files, "Model Names")
     if parameters:
         filename = f"{parameters[0]}.json"
+        stick_model_input = StickModelInput()
+        stick_model_input.loadFile(filename)
+        stick_model = stick_model_input.stick_model
+        rs.CurrentLayer("Default")
+        if rs.IsLayer("Input"):
+            rs.PurgeLayer("Input")
+        rs.AddLayer("Input")
+        rs.CurrentLayer("Input")
+        nodes = []
 
-    stick_model_input = StickModelInput()
-    stick_model_input.loadFile(filename)
-    stick_model = stick_model_input.stick_model
-    rs.CurrentLayer("Default")
-    if rs.IsLayer("Input"):
-        rs.PurgeLayer("Input")
-    rs.AddLayer("Input")
-    rs.CurrentLayer("Input")
-    nodes = []
-
-    for [ind0, ind1] in stick_model.lineE:
-        np0 = stick_model.lineV[ind0, :]
-        np1 = stick_model.lineV[ind1, :]
-        rs.AddLine(np0.tolist(), np1.tolist())
+        for [ind0, ind1] in stick_model.lineE:
+            np0 = stick_model.lineV[ind0, :]
+            np1 = stick_model.lineV[ind1, :]
+            rs.AddLine(np0.tolist(), np1.tolist())
 
 if stick_model_input is not None:
     multiprocessing.set_executable(rhinocode.get_python_executable())

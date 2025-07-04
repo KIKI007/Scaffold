@@ -12,13 +12,13 @@ from scaffold import LOCAL_SERVER_NAME
 
 class ScaffoldViewer:
     def __init__(self):
-
         try:
             ps.init()
             ps.set_navigation_style("turntable")
             ps.set_up_dir("z_up")
             ps.set_ground_plane_mode('none')
             ps.set_user_callback(self.interface_scaffold)
+            ps.remove_all_structures()
         except:
             pass
 
