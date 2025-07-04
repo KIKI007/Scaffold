@@ -11,12 +11,13 @@
 
 ### 2. Install Scaffold Python Package
 
+You may install the software in a python or conda virtual environment.
+The minimum requirement for python is version 3.9.
+
 ```bash
 pip install -e .
 python -m pip install 'pytransform3d[all]'
 ```
-You may install the software in a python or conda virtual environment.
-The minimum requirement for python is version 3.9.
 
 To run optimization:
 ```bash
