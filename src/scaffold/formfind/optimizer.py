@@ -165,7 +165,8 @@ class SMILP_optimizer:
             output.status = status
             output.print_message = print_message
             data = output.toJson()
-            self.draw_queue.put(data)
+            if self.draw_queue is not None:
+                self.draw_queue.put(data)
 
     def parse_prev_computed_result(self):
         self.models = []

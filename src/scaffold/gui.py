@@ -12,11 +12,16 @@ from scaffold import LOCAL_SERVER_NAME
 
 class ScaffoldViewer:
     def __init__(self):
-        ps.init()
-        ps.set_navigation_style("turntable")
-        ps.set_up_dir("z_up")
-        ps.set_ground_plane_mode('none')
-        ps.set_user_callback(self.interface_scaffold)
+
+        try:
+            ps.init()
+            ps.set_navigation_style("turntable")
+            ps.set_up_dir("z_up")
+            ps.set_ground_plane_mode('none')
+            ps.set_user_callback(self.interface_scaffold)
+        except:
+            pass
+
         self.show_clamps = False
         self.re_render = False
 
@@ -29,6 +34,8 @@ class ScaffoldViewer:
 
         self.compute_queue = None
         self.draw_queue = None
+        self.rhino_queue = None
+        self.rhino = False
 
     def register_model(self, model):
         if hasattr(model, 'name'):
@@ -186,7 +193,7 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
         self.register_model(self.input.stick_model)
 
     def send_optimization_command(self):
-        if self.input.stick_model.is_valid():
+        if self.input.stick_model.is_valid() and self.compute_queue is not None:
             msg = self.input.toJSON()
             self.input.saveFile()
             self.compute_queue.put(msg)
@@ -226,17 +233,23 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
                 psim.TreePop()
             psim.TreePop()
         else:
-            try:
-                draw_request = self.draw_queue.get(block=False)
-                output = ScaffoldModelOutput()
-                output.fromJson(draw_request)
-                self.running_msg = output.print_message
-                if output.status == "succeed" or output.status == "failed":
-                    self.input.opt_parameters = output.opt_parameters
-                    self.running = False
-                    ps.warning("Optimization finished.")
-                self.add_scaffold_model(output.scaffold_model)
-            except:
-                pass
+            if self.draw_queue is not None:
+                try:
+                    draw_request = self.draw_queue.get(block=False)
+                    output = ScaffoldModelOutput()
+                    output.fromJson(draw_request)
+                    self.running_msg = output.print_message
+                    if output.status == "succeed" or output.status == "failed":
+                        self.input.opt_parameters = output.opt_parameters
+                        self.running = False
+                        if self.rhino:
+                            if len(self.models) > 0 and self.rhino_queue is not None:
+                                self.rhino_queue.put(self.models[-1])
+                            ps.unshow()
+                        else:
+                            ps.warning("Optimization finished.")
+                    self.add_scaffold_model(output.scaffold_model)
+                except:
+                    pass
 
         self.update_render()

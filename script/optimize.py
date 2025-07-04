@@ -1,32 +1,7 @@
 import argparse
-from scaffold.gui import ScaffoldOptimizerViewer, ScaffoldViewer
-from scaffold.formfind.optimizer import SMILP_optimizer
-from scaffold.io import StickModelInput, ScaffoldModelOutput
-from multiprocessing import Process, Queue
-import time
-
-def scaffold_optimization_gui(file_path, compute_queue, draw_queue):
-    viewer = ScaffoldOptimizerViewer()
-    if file_path is None or file_path == "":
-        file_path = "one_tet.json"
-    viewer.load_from_file(file_path)
-    viewer.draw_queue = draw_queue
-    viewer.compute_queue = compute_queue
-    viewer.show()
-
-def computation_process(compute_queue, draw_queue):
-    while True:
-        try:
-            request_json = compute_queue.get(block=False)
-            input = StickModelInput()
-            input.fromJSON(request_json)
-            optimizer = SMILP_optimizer(input.stick_model.file_name)
-            optimizer.input_model(input)
-            optimizer.draw_queue = draw_queue
-            optimizer.solve()
-        except:
-            pass
-        time.sleep(0.1)
+from scaffold.compute import computation_process, scaffold_optimization_gui
+from scaffold.gui import ScaffoldOptimizerViewer
+from multiprocessing import Queue, Process
 
 if __name__ == "__main__":
 
