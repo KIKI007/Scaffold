@@ -1,0 +1,37 @@
+[project]
+name = "scaffold"
+version = "0.0.1"
+authors = [
+  { name="Ziqi Wang", email="ziqiw@ust.hk" },
+]
+dependencies = [
+    "numpy",
+    "gurobipy==12.0.1",
+    "jax==0.4.30",
+    "polyscope==2.2.1",
+    "trimesh==4.6.1",
+    "termcolor==2.5.0",
+    "jaxlib==0.4.30",
+    "distance3d==0.9.0",
+]
+
+description = "Computational design and fabrication of reusable multi-tangent bar structures."
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[tool.hatch.build.targets.wheel]
+ignore-vcs = true
+packages = ["src/scaffold"]
+include = ["src/**"]
+
+[build-system]
+requires = ["hatchling >= 1.27.0"]
+build-backend = "hatchling.build"
+
+[project.urls]
+Homepage = "https://github.com/kiki007/Scaffold"
+Issues = "https://github.com/kiki007/Scaffold/issues"
