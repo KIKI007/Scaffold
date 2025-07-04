@@ -40,10 +40,15 @@ Replace USERNAME to your local folder name. If such a folder does not exists, pl
 To run test example,
 1. Open the rhino file `rhino\test_example.3dm`
 2. Run the script `rhino\run_script.py` using rhino script editor.
-3. Confirm the parameters list
-4. Select input curves
-5. Select boundary curves
-6. Wait until optimization finished
+3. Choose whether to use your own model or load from our example folder.
+4. If load your own model
+4.1 Confirm the parameters list
+4.2 Select input curves
+4.3 Select boundary curves
+4.4 Wait until optimization finished
+5. If load from example folder
+5.1 Choose a model to optimize
+5.2 Wait until optimization finished
 
 ![image](https://github.com/KIKI007/Scaffold/blob/main/rhino/example.gif)
 
