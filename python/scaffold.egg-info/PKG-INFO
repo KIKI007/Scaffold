@@ -13,7 +13,6 @@ Requires-Dist: gurobipy==12.0.1
 Requires-Dist: jax==0.4.30
 Requires-Dist: polyscope==2.2.1
 Requires-Dist: trimesh==4.6.1
-Requires-Dist: compas_eve==1.0.0
 Requires-Dist: termcolor==2.5.0
 Requires-Dist: jaxlib==0.4.30
 Requires-Dist: distance3d==0.9.0

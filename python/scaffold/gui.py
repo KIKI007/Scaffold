@@ -2,13 +2,8 @@ import numpy as np
 import polyscope as ps
 from scaffold import DATA_DIR
 import polyscope.imgui as psim
-from scaffold.io import StickModelInput
+from scaffold.io import StickModelInput, ScaffoldModelOutput
 from scaffold.formfind.optimizer import SMILP_optimizer
-from compas_eve import Message
-from compas_eve import Subscriber
-from compas_eve import Publisher
-from compas_eve import Topic
-from compas_eve.mqtt import MqttTransport
 from scaffold.collision import CollisionSolver
 import time
 import json
@@ -31,6 +26,9 @@ class ScaffoldViewer:
 
         self.input = StickModelInput()
         self.models = []
+
+        self.compute_queue = None
+        self.draw_queue = None
 
     def register_model(self, model):
         if hasattr(model, 'name'):
@@ -159,7 +157,7 @@ class ScaffoldViewer:
             if self.user_select_model_id != "None" and self.user_select_model_id in self.model_name_map:
                 self.register_model(self.model_name_map[self.user_select_model_id])
             self.re_render = False
-            ps.reset_camera_to_home_view()
+            #ps.reset_camera_to_home_view()
 
 class ScaffoldOptimizerViewer(ScaffoldViewer):
 
@@ -189,15 +187,11 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
 
     def send_optimization_command(self):
         if self.input.stick_model.is_valid():
-            topic = Topic("/opt/problem_request/", Message)
-            tx = MqttTransport(host=LOCAL_SERVER_NAME)
-            publisher = Publisher(topic, transport=tx)
-            msg = Message(self.input.toJSON())
+            msg = self.input.toJSON()
             self.input.saveFile()
-            publisher.publish(msg)
+            self.compute_queue.put(msg)
             self.running = True
             self.running_msg = ""
-            time.sleep(1)
 
     def interface_opt(self):
         psim.PushItemWidth(150)
@@ -205,10 +199,8 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
         self.interface_scaffold()
 
         psim.Separator()
-
         # optimization button
-        if self.running == False:
-
+        if not self.running:
             if psim.Button("Optimize"):
                 self.send_optimization_command()
 
@@ -231,9 +223,20 @@ class ScaffoldOptimizerViewer(ScaffoldViewer):
                     psim.SameLine()
                     if psim.Button("-") and len(lengths) > 0:
                         lengths.pop()
-
                 psim.TreePop()
-
             psim.TreePop()
+        else:
+            try:
+                draw_request = self.draw_queue.get(block=False)
+                output = ScaffoldModelOutput()
+                output.fromJson(draw_request)
+                self.running_msg = output.print_message
+                if output.status == "succeed" or output.status == "failed":
+                    self.input.opt_parameters = output.opt_parameters
+                    self.running = False
+                    ps.warning("Optimization finished.")
+                self.add_scaffold_model(output.scaffold_model)
+            except:
+                pass
 
         self.update_render()

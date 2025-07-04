@@ -9,21 +9,25 @@
 
 2. [Following the installation instructions](https://support.gurobi.com/hc/en-us/articles/14799677517585-Getting-Started-with-Gurobi-Optimizer)
 
-### 2. Install MQTT Server.
-[Download and run mosquitto software](https://mosquitto.org/)
-
-### 3. Install Scaffold
+### 2. Install Scaffold Python Package
 
 ```bash
 pip install -e .
+python3 -m pip install 'pytransform3d[all]'
 ```
 You may install the software in a python or conda virtual environment.
 The minimum requirement for python is version 3.9.
 
-To test if things are installed correctly:
+To run optimization:
 ```bash
-python3 .\script\optimize.py
+python3 .\script\optimize.py --name one_tet
 ```
+
+To visualize optimized results:
+```bash
+python3 .\script\visualization.py --name one_tet
+```
+
 ### 4. Rhino plugin
 
 The recent rhino 8 support native python.

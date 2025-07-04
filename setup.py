@@ -27,7 +27,6 @@ requirements = [
     "jax==0.4.30",
     "polyscope==2.2.1",
     "trimesh==4.6.1",
-    "compas_eve==1.0.0",
     "termcolor==2.5.0",
     "jaxlib==0.4.30",
     "distance3d==0.9.0",

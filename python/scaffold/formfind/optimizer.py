@@ -9,11 +9,6 @@ from scaffold.formfind.post_processing import *
 from scaffold.formfind.gurobi_func import *
 from scaffold.io import ScaffoldModelOutput, StickModelInput
 
-from compas_eve import Message
-from compas_eve import Subscriber
-from compas_eve import Publisher
-from compas_eve import Topic
-from compas_eve.mqtt import MqttTransport
 import time
 import multiprocessing as mp
 from multiprocessing import Process
@@ -33,6 +28,7 @@ class SMILP_optimizer:
     def __init__(self, name):
         self.file_name = name
         self.send_message_flag = True
+        self.draw_queue = None
         pass
 
     def from_edge_ind_to_coord(self, sub_inds):
@@ -160,15 +156,6 @@ class SMILP_optimizer:
 
         self.prev_opt_data = {"vs": [], "xs": [], "nstatus": -1, "contact_pairs_coord": []}
 
-    def send_result_message(self, queue):
-        data = queue.get()
-        topic = Topic("/opt/scaffold_model/", Message)
-        tx = MqttTransport(host=LOCAL_SERVER_NAME)
-        publisher = Publisher(topic, transport=tx)
-        msg = Message(data)
-        publisher.publish(msg)
-        time.sleep(1)
-
     def send_result(self, status="", print_message="", model=None):
         if self.send_message_flag:
             output = ScaffoldModelOutput()
@@ -177,14 +164,8 @@ class SMILP_optimizer:
             output.opt_parameters = self.opt_parameters
             output.status = status
             output.print_message = print_message
-
             data = output.toJson()
-
-            queue = mp.Queue()
-            p = Process(target=self.send_result_message, args=(queue,))
-            p.start()
-            queue.put(data)
-            p.join()
+            self.draw_queue.put(data)
 
     def parse_prev_computed_result(self):
         self.models = []
@@ -355,7 +336,8 @@ class SMILP_optimizer:
                                            self.line_vertices_coord,
                                            curr_fixed_edges_coord,
                                            xs=opt_data["xs"],
-                                           vs=opt_data["vs"])
+                                           vs=opt_data["vs"],
+                                           send_intermediate_result=True)
             logs.extend(_logs)
 
             if opt_data["nstatus"] != 0:
