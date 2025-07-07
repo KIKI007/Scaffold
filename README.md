@@ -43,7 +43,8 @@ Note: If such a folder does not exists, please run `_ScriptEditor` command in rh
 2. Choose to load from examples
 3. Choose a model to optimize
 4. Wait until optimization finished
-  
+![image](https://github.com/KIKI007/Scaffold/blob/main/rhino/load_from_examples.mp4)
+
 ### 3.3 Load a new model
 1. Open the rhino file `rhino\test_example.3dm`
 2. Run the script `rhino\run_script.py` using rhino script editor.
@@ -53,7 +54,6 @@ Note: If such a folder does not exists, please run `_ScriptEditor` command in rh
 6. Select boundary curves
 7. Wait until optimization finished
 
-![image](https://github.com/KIKI007/Scaffold/blob/main/rhino/example.gif)
 
 ## Hardware
 
