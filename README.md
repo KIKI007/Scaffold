@@ -43,7 +43,8 @@ Note: If such a folder does not exists, please run `_ScriptEditor` command in rh
 2. Choose to load from examples
 3. Choose a model to optimize
 4. Wait until optimization finished
-![image](https://github.com/KIKI007/Scaffold/blob/main/rhino/load_from_examples.mp4)
+   
+<video src="https://github.com/KIKI007/Scaffold/blob/main/rhino/load_from_examples.mp4" width=180></video>
 
 ### 3.3 Load a new model
 1. Open the rhino file `rhino\test_example.3dm`
