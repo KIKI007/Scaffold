@@ -1,15 +1,13 @@
 ## Computational design and fabrication of reusable multi-tangent bar structures.
 ![image](https://github.com/KIKI007/Scaffold/blob/main/rhino/teaser.png)
 
-## Installations
-
-### 1. Obtain the free academic license for Gurobi.
+## 1. Prerequisite
 
 1. [Register for a free Gurobi account as an academic and log in](https://portal.gurobi.com/iam/register/).
 
-2. [Following the installation instructions](https://support.gurobi.com/hc/en-us/articles/14799677517585-Getting-Started-with-Gurobi-Optimizer)
+2. [Following the Gurobi installation instructions](https://support.gurobi.com/hc/en-us/articles/14799677517585-Getting-Started-with-Gurobi-Optimizer)
 
-### 2. Install Scaffold Python Package
+## 2. Using as a standalone python software
 
 You may install the software in a python or conda virtual environment.
 The minimum requirement for python is version 3.9.
@@ -29,26 +27,31 @@ To visualize optimized results:
 python .\script\visualization.py --name one_tet
 ```
 
-### 4. Rhino plugin
+## 3. Using a rhino plugin
 
+### 3.1 Installation
 The recent rhino 8 support native python.
 ```bash
 C:\Users\USERNAME\.rhinocode\py39-rh8\python.exe -m pip install -e .
 ```
-Replace USERNAME to your local folder name. If such a folder does not exists, please run `_ScriptEditor` command in rhino 8 to initialize the rhino-python environment.
+Replace USERNAME to your local folder name. 
 
-To run test example,
+Note: If such a folder does not exists, please run `_ScriptEditor` command in rhino 8 to initialize the rhino-python environment.
+
+### 3.2 Load an example
+1. Run the script `rhino\run_script.py` using rhino script editor.
+2. Choose to load from examples
+3. Choose a model to optimize
+4. Wait until optimization finished
+  
+### 3.3 Load a new model
 1. Open the rhino file `rhino\test_example.3dm`
 2. Run the script `rhino\run_script.py` using rhino script editor.
-3. Choose whether to use your own model or load from our example folder.
-4. If load your own model
-   1. Confirm the parameters list
-   2. Select input curves
-   3. Select boundary curves
-   4. Wait until optimization finished
-5. If load from example folder
-    1. Choose a model to optimize
-    2. Wait until optimization finished
+3. Choose to load from examples
+4. Confirm the parameters list
+5. Select input curves
+6. Select boundary curves
+7. Wait until optimization finished
 
 ![image](https://github.com/KIKI007/Scaffold/blob/main/rhino/example.gif)
 
