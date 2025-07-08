@@ -39,7 +39,7 @@ Replace USERNAME to your local folder name.
 Note: If such a folder does not exists, please run `_ScriptEditor` command in rhino 8 to initialize the rhino-python environment.
 
 ### 3.2 Load an example
-https://github.com/KIKI007/Scaffold/blob/main/rhino/load_from_examples.mp4
+![image](https://github.com/KIKI007/Scaffold/blob/main/rhino/load_from_examples.gif)
 
 1. Run the script `rhino\run_script.py` using rhino script editor.
 2. Choose to load from examples
