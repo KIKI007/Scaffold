@@ -32,13 +32,9 @@ python .\script\visualization.py --name one_tet
 ## 3. Using a rhino plugin
 
 ### 3.1 Installation
-The recent rhino 8 support native python.
-```bash
-C:\Users\USERNAME\.rhinocode\py39-rh8\python.exe -m pip install -e .
-```
-Replace USERNAME to your local folder name. 
+Rhino 8 supports native python. We can install scaffold package in rhino using following commands:
+![image](https://github.com/KIKI007/Scaffold/blob/main/rhino/pip_rhino.gif)
 
-Note: If such a folder does not exists, please run `_ScriptEditor` command in rhino 8 to initialize the rhino-python environment.
 
 ### 3.2 Load examples
 ![image](https://github.com/KIKI007/Scaffold/blob/main/rhino/load_from_examples.gif)
