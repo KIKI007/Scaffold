@@ -40,7 +40,7 @@ Replace USERNAME to your local folder name.
 
 Note: If such a folder does not exists, please run `_ScriptEditor` command in rhino 8 to initialize the rhino-python environment.
 
-### 3.2 Load from examples
+### 3.2 Load examples
 ![image](https://github.com/KIKI007/Scaffold/blob/main/rhino/load_from_examples.gif)
 
 1. Run the script `rhino\run_script.py` using rhino script editor.
@@ -48,7 +48,7 @@ Note: If such a folder does not exists, please run `_ScriptEditor` command in rh
 3. Choose a model to optimize
 4. Wait until optimization finished
 
-### 3.3 Load from rhino
+### 3.3 Customized inputs
 ![image](https://github.com/KIKI007/Scaffold/blob/main/rhino/load_from_rhino.gif)
 
 1. Open the rhino file `rhino\test_example.3dm`
