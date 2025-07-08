@@ -1,4 +1,6 @@
 ## Computational design and fabrication of reusable multi-tangent bar structures.
+Yijiang Huang*, Ziqi Wang*, Yi-Hsiu Hung, Chenming Jiang, Aurèle Gheyselinck, and Stelian Coros
+
 ![image](https://github.com/KIKI007/Scaffold/blob/main/rhino/teaser.png)
 
 ## 1. Prerequisite
@@ -38,7 +40,7 @@ Replace USERNAME to your local folder name.
 
 Note: If such a folder does not exists, please run `_ScriptEditor` command in rhino 8 to initialize the rhino-python environment.
 
-### 3.2 Load an example
+### 3.2 Load from examples
 ![image](https://github.com/KIKI007/Scaffold/blob/main/rhino/load_from_examples.gif)
 
 1. Run the script `rhino\run_script.py` using rhino script editor.
@@ -46,7 +48,9 @@ Note: If such a folder does not exists, please run `_ScriptEditor` command in rh
 3. Choose a model to optimize
 4. Wait until optimization finished
 
-### 3.3 Load a new model
+### 3.3 Load from rhino
+![image](https://github.com/KIKI007/Scaffold/blob/main/rhino/load_from_rhino.gif)
+
 1. Open the rhino file `rhino\test_example.3dm`
 2. Run the script `rhino\run_script.py` using rhino script editor.
 3. Choose to load from examples

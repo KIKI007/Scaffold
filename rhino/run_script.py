@@ -142,25 +142,28 @@ if stick_model_input is not None:
     scaffold_optimization_gui_rhino(stick_model_input, compute_queue, draw_queue, rhino_queue)
     compute_sub_process.terminate()
 
-    model = rhino_queue.get(block=False)
-    print("Get")
-    rs.CurrentLayer("Default")
-    if rs.IsLayer("Output"):
-        rs.PurgeLayer("Output")
-    rs.AddLayer("Output")
-    rs.CurrentLayer("Output")
-    nodes = []
-    radius = stick_model_input.stick_model.radius
-    for [p0, p1] in model.lines:
-        np0 = numpy.array(p0)
-        np1 = numpy.array(p1)
-        length = numpy.linalg.norm(np1 - np0)
-        origin = p0
-        normal = (np1 - np0) / length
-        base_plane = rs.PlaneFromNormal(origin.tolist(), normal.tolist())
-        rs.AddCylinder(base=base_plane, height=length, radius=radius)
+    try:
+        model = rhino_queue.get(block=False)
+    except:
+        model = None
+    if model is not None:
+        rs.CurrentLayer("Default")
+        if rs.IsLayer("Output"):
+            rs.PurgeLayer("Output")
+        rs.AddLayer("Output")
+        rs.CurrentLayer("Output")
+        nodes = []
+        radius = stick_model_input.stick_model.radius
+        for [p0, p1] in model.lines:
+            np0 = numpy.array(p0)
+            np1 = numpy.array(p1)
+            length = numpy.linalg.norm(np1 - np0)
+            origin = p0
+            normal = (np1 - np0) / length
+            base_plane = rs.PlaneFromNormal(origin.tolist(), normal.tolist())
+            rs.AddCylinder(base=base_plane, height=length, radius=radius)
 
-    for id in range(len(model.adj)):
-        for jd in range(0, 2):
-            [V, F] = model.coupler(id, jd)
-            rs.AddMesh(V.tolist(), F.tolist())
+        for id in range(len(model.adj)):
+            for jd in range(0, 2):
+                [V, F] = model.coupler(id, jd)
+                rs.AddMesh(V.tolist(), F.tolist())
